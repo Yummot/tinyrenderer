@@ -1,0 +1,7 @@
+[package]
+name = "tinyrenderer"
+version = "0.1.0"
+authors = ["Mot Yu <mot.yu@outlook.com>"]
+
+[dependencies]
+num = "*"
