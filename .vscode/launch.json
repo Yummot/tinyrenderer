@@ -2,17 +2,12 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Launch Extension",
-			"type": "extensionHost",
+			"name": "Debug",
+			"type": "gdb",
 			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceRoot}"
-			],
-			"stopOnEntry": false,
-			"sourceMaps": true,
-			"outDir": "out",
-			"preLaunchTask": "npm"
+			"target": "./target/debug/tinyrenderer.exe",
+            "cwd": "${workspaceRoot}",
+			"preLaunchTask": "build"
 		}
 	]
 }

@@ -126,15 +126,15 @@ vec_create!(
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vec2<T> {
-    x: T,
-    y: T,
+    pub x: T,
+    pub y: T,
 }
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3<T> {
-    x: T,
-    y: T,
-    z: T,
+    pub x: T,
+    pub y: T,
+    pub z: T,
 }
 
 macro_rules! vec_impl_helper {

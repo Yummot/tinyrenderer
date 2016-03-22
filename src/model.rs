@@ -37,7 +37,7 @@ fn solver(x: &&str, faces: &mut Vec<Vec<i32>>, verts: &mut Vec<Vec3f>) {
 
 impl Model {
     #[allow(dead_code)]
-    pub fn new(filename: &str) -> Model {
+    pub fn open(filename: &str) -> Model {
         let path = Path::new(filename);
         let mut file = File::open(&path).unwrap();
 

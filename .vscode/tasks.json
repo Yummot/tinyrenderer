@@ -33,6 +33,7 @@
             "taskName": "run",
             "showOutput": "always"
         },
+        
         {
             "taskName": "test",
             "showOutput": "always",
