@@ -33,7 +33,18 @@ fn main() {
     let height = 800;
     let white = TGAColor::with_color(RGBAColor(255,255,255,255));
     let _red   = TGAColor::with_color(RGBAColor(255,0,0,255));
-    let model = model::Model::open("obj/african_head.obj");
+    let args: Vec<String> = std::env::args().collect();
+    let model = if args.len() == 1 {
+        model::Model::open("obj/0.obj")
+    } else if args.len() == 2 {
+        if args[1].find(".obj") != None {
+            model::Model::open(&args[1])
+        } else {
+            panic!("Error: Wrong input parameter: {:?}", args[1])
+        }
+    } else {
+        panic!("Too many input parameter.");   
+    };
     
     let mut image = tga_image::TGAImage::with_info(width, height, tga_image::RGB);
     

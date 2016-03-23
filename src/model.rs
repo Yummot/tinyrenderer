@@ -26,6 +26,7 @@ fn solver(x: &&str, faces: &mut Vec<Vec<i32>>, verts: &mut Vec<Vec3f>) {
 
         for i in 0..face.len() {
             if i == 1 || i == 4 || i == 7 {
+                //println!("face{:?}", face);
                 let get = face[i].trim().parse::<i32>().unwrap() - 1;
                 face_vec.push(get);
             }
@@ -45,11 +46,17 @@ impl Model {
         let _len = file.read_to_string(&mut data).unwrap();
 
         let vec_data: Vec<&str> = data.split('\n').collect();
+        let data_without_comments: Vec<&str>  = vec_data.into_iter().filter(|&x| {
+            match x.find("#") {
+                None => return true,
+                _ => return false,
+            }
+        }).collect();
 
         let mut faces_vec: Vec<Vec<i32>> = vec![];
         let mut verts_vec: Vec<Vec3f> = vec![];
 
-        let _data: Vec<()> = vec_data.iter().map(|x| solver(x, &mut faces_vec, &mut verts_vec)).collect();
+        let _data: Vec<()> = data_without_comments.iter().map(|x| solver(x, &mut faces_vec, &mut verts_vec)).collect();
 
         Model {
             verts_: verts_vec,
