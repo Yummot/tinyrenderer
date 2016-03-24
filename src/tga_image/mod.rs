@@ -1,9 +1,9 @@
-pub mod base;
+mod base;
 
-use self::base::{u16_from_le, u32_from_le};
+use self::base::u32_from_le;
 
 use std;
-use ::std::io::prelude::*;
+use std::io::prelude::*;
 use std::fs::File;
 use std::ptr::copy as memmove;
 use std::ptr::copy_nonoverlapping as memcpy;
@@ -211,28 +211,26 @@ fn read_header<R: Read>(reader: &mut R) -> Result<TGAHeader, &str> {
 
     reader.read_exact(&mut buf).unwrap();
 
-    let hdr = TGAHeader {
-        idlength: buf[0],
-        colormaptype: buf[1],
-        datatypecode: buf[2],
-        colormaporigin: u16_from_le(&buf[3..5]),
-        colormaplength: u16_from_le(&buf[5..7]),
-        colormapdepth: buf[7],
-        x_origin: u16_from_le(&buf[8..10]),
-        y_origin: u16_from_le(&buf[10..12]),
-        width: u16_from_le(&buf[12..14]),
-        height: u16_from_le(&buf[14..16]),
-        bitsperpixel: buf[16],
-        imagedescriptor: buf[17],
-    };
+    // let hdr = TGAHeader {
+    //     idlength: buf[0],
+    //     colormaptype: buf[1],
+    //     datatypecode: buf[2],
+    //     colormaporigin: u16_from_le(&buf[3..5]),
+    //     colormaplength: u16_from_le(&buf[5..7]),
+    //     colormapdepth: buf[7],
+    //     x_origin: u16_from_le(&buf[8..10]),
+    //     y_origin: u16_from_le(&buf[10..12]),
+    //     width: u16_from_le(&buf[12..14]),
+    //     height: u16_from_le(&buf[14..16]),
+    //     bitsperpixel: buf[16],
+    //     imagedescriptor: buf[17],
+    // };
+    
+    let hdr = unsafe { std::mem::transmute::<[u8;18], TGAHeader>(buf) };
 
     if hdr.width < 1 && hdr.height < 1 && hdr.colormaptype > 1 ||
-       (hdr.colormaptype == 0 &&
-        (hdr.colormaporigin > 0 || hdr.colormaplength > 0 || hdr.colormapdepth > 0)) ||
-       !match hdr.colormaptype {
-        1...3 | 9...11 => true,
-        _ => false,
-    } {
+       (hdr.colormaptype == 0 && (hdr.colormaporigin > 0 || hdr.colormaplength > 0 || hdr.colormapdepth > 0))
+    {
         Err("corrupt TGA header")
     } else {
         Ok(hdr)
