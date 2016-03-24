@@ -6,7 +6,7 @@
 			"type": "gdb",
 			"request": "launch",
 			"target": "./target/debug/tinyrenderer.exe",
-            "cwd": "${workspaceRoot}",
+            "cwd": "${workspaceRoot}", 
 			"preLaunchTask": "build"
 		}
 	]

@@ -35,10 +35,7 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
 }
 
 #[allow(non_snake_case)]
-fn triangle(mut v0: Vec2i, mut v1: Vec2i, mut v2: Vec2i, image: &mut TGAImage, _color: TGAColor) {
-    let red = TGAColor::with_color(RGBAColor(255,0,0,255));
-    let blue = TGAColor::with_color(RGBAColor(0,0,255,255));
-    
+fn triangle(mut v0: Vec2i, mut v1: Vec2i, mut v2: Vec2i, image: &mut TGAImage, color: TGAColor) {    
     if v0.y > v1.y { std::mem::swap(&mut v0, &mut v1); }
     if v0.y > v2.y { std::mem::swap(&mut v0, &mut v2); }
     if v1.y > v2.y { std::mem::swap(&mut v1, &mut v2); }   
@@ -49,11 +46,27 @@ fn triangle(mut v0: Vec2i, mut v1: Vec2i, mut v2: Vec2i, image: &mut TGAImage, _
         let alpha = (y as f32 - v0.y as f32) / total_height as f32;
         let beta = (y as f32 - v0.y as f32) / segment_height as f32;
         
-        let A = v0 + (v2 - v0).mul_num(alpha);
-        let B = v0 + (v1 - v0).mul_num(beta);
+        let mut A = v0 + (v2 - v0).mul_num(alpha);
+        let mut B = v0 + (v1 - v0).mul_num(beta);
         
-        image.set(A.x, y, red);
-        image.set(B.x, y, blue);
+        if A.x > B.x { std::mem::swap(&mut A, &mut B); }
+        for j in A.x..(B.x + 1) {
+            image.set(j, y, color);
+        }
+    }
+    
+    for y in v1.y..(v2.y + 1) {
+        let segment_height = v2.y - v1.y + 1;
+        let alpha = (y as f32 - v0.y as f32) / total_height as f32;
+        let beta = (y as f32 - v1.y as f32) / segment_height as f32;
+        
+        let mut A = v0 + (v2 - v0).mul_num(alpha);
+        let mut B = v1 + (v2 - v1).mul_num(beta);
+        
+        if A.x > B.x { std::mem::swap(&mut A, &mut B); }
+        for j in A.x..(B.x + 1) {
+            image.set(j, y, color);
+        }        
     }
 }
 
