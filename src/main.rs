@@ -5,21 +5,26 @@ mod model;
 mod tests;
 mod tga_image;
 use tga_image::*;
+use geometry::*;
 
-fn line(mut x0: i32, mut y0: i32, mut x1: i32, mut y1: i32, image: &mut TGAImage, color: TGAColor) {
+static WHITE: TGAColor = TGAColor { bytespp: 3, r: 255, g: 255, b: 255, a: 255 };
+const RED: TGAColor = TGAColor { bytespp: 3, r: 255, g: 0, b: 0, a: 255 };
+const GREEN: TGAColor = TGAColor { bytespp: 3, r: 0, g: 255, b: 0, a: 255 };
+const BLUE: TGAColor = TGAColor { bytespp: 3, r: 0, g: 0, b: 255, a: 255 };
+
+fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
      let mut steep = false;
-     if (x0 - x1).abs() < (y0 - y1).abs() {
-         std::mem::swap(&mut x0, &mut y0);
-         std::mem::swap(&mut x1, &mut y1);
+     if (p0.x - p1.x).abs() < (p0.y - p1.y).abs() {
+         std::mem::swap(&mut p0.x, &mut p0.y);
+         std::mem::swap(&mut p1.x, &mut p1.y);
          steep = true;
      }
-     if x0 > x1 {
-         std::mem::swap(&mut x0, &mut x1);
-         std::mem::swap(&mut y0, &mut y1);
+     if p0.x > p1.x {
+         std::mem::swap(&mut p0, &mut p1);
      }
-     for x in x0..x1 {
-         let t = (x as f32 - x0 as f32) / (x1 as f32 - x0 as f32);
-         let y = y0 as f32 * (1.0 - t) + y1 as f32 * t;
+     for x in p0.x..p1.x {
+         let t = (x as f32 - p0.x as f32) / (p1.x as f32 - p0.x as f32);
+         let y = p0.y as f32 * (1.0 - t) + p1.y as f32 * t;
          if steep {
              image.set(y as usize, x as usize, color);
          } else {
@@ -28,44 +33,32 @@ fn line(mut x0: i32, mut y0: i32, mut x1: i32, mut y1: i32, image: &mut TGAImage
      }
 }
 
+fn triangle(mut v0: Vec2i, mut v1: Vec2i, mut v2: Vec2i, image: &mut TGAImage, _color: TGAColor) {
+    if v0.y > v1.y { std::mem::swap(&mut v0, &mut v1); }
+    if v0.y > v2.y { std::mem::swap(&mut v0, &mut v2); }
+    if v1.y > v2.y { std::mem::swap(&mut v1, &mut v2); }   
+    
+    line(v0, v1, image, GREEN);
+    line(v1, v2, image, GREEN);
+    line(v2, v0, image, RED);
+}
+
 fn main() {
-    let width = 800;
-    let height = 800;
     let white = TGAColor::with_color(RGBAColor(255,255,255,255));
-    let _red   = TGAColor::with_color(RGBAColor(255,0,0,255));
-    let args: Vec<String> = std::env::args().collect();
-    let model = if args.len() == 1 {
-        model::Model::open("obj/african_head.obj")
-    } else if args.len() == 2 {
-        if args[1].find(".obj") != None {
-            model::Model::open(&args[1])
-        } else {
-            panic!("Error: Wrong input parameter: {:?}", args[1])
-        }
-    } else {
-        panic!("Too many input parameter.");   
-    };
+    let red = TGAColor::with_color(RGBAColor(255,0,0,255));
+    let blue = TGAColor::with_color(RGBAColor(0,0,255,255));
     
-    let mut image = tga_image::TGAImage::with_info(width, height, tga_image::RGB);
+    let mut image = TGAImage::with_info(200,200,RGB);
     
-    for i in 0..model.nfaces() {
-        let face = model.face(i);
-        for j in 0..3 {
-            let v0 = model.vert(face[j] as usize);
-            let v1 = model.vert(face[(j + 1) % 3] as usize);
-            
-            let x0 = ((v0.x + 1.0) * (width as f32) / 2.0) as i32;
-            let y0 = ((v0.y + 1.0) * (height as f32) / 2.0) as i32;
-            let x1 = ((v1.x + 1.0) * (width as f32) / 2.0) as i32;
-            let y1 = ((v1.y + 1.0) * (height as f32) / 2.0) as i32;
-            
-            //println!("x0 {}, y0 {}, x1 {}, y1 {}.({},{})", x0, y0, x1, y1, i, j);
-            //println!("v0: {:?}, v1: {:?}", v0, v1);
-            line(x0,y0,x1,y1,&mut image, white);
-        }
-    }
+    let t0 = [Vec2i::new(10, 70),   Vec2i::new(50, 160),  Vec2i::new(70, 80)]; 
+    let t1 = [Vec2i::new(180, 50),  Vec2i::new(150, 1),   Vec2i::new(70, 180)]; 
+    let t2 = [Vec2i::new(180, 150), Vec2i::new(120, 160), Vec2i::new(130, 180)]; 
+    
+    triangle(t0[0], t0[1], t0[2], &mut image, white);
+    triangle(t1[0], t1[1], t1[2], &mut image, red);
+    triangle(t2[0], t2[1], t2[2], &mut image, blue);
     
     image.flip_vertically().unwrap();
-    image.write_tga_file("output.tga", tga_image::WRITE_RLE_FILE).unwrap();
+    image.write_tga_file("lesson2_output.tga", tga_image::WRITE_RLE_FILE).unwrap();
     println!("Finished");
 }

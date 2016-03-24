@@ -9,6 +9,9 @@ use std::ptr::copy as memmove;
 use std::ptr::copy_nonoverlapping as memcpy;
 
 
+// pub trait Image {}
+// impl Image for TGAImage{}
+
 #[allow(dead_code)]
 #[repr(packed)] //like c/c++ #program(push,1) /* */ #program(pop), remove padding in struct
 pub struct TGAHeader {
@@ -56,11 +59,11 @@ pub const UNSET: isize = 0;
 
 #[derive(Clone, Debug, Copy)]
 pub struct TGAColor {
-    bytespp: u32,
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
+    pub bytespp: u32,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
 }
 
 pub struct RGBAColor(pub u8, pub u8, pub u8, pub u8);
