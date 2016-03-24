@@ -140,7 +140,7 @@ pub struct Vec3<T> {
 macro_rules! vec_impl_helper {
     ($($dst : ident > ( $($attr_name : ident)*) ;)*) => (
         $(
-            impl<T> Mul for $dst<T> 
+            impl<T> Mul for $dst<T>
                 where T: Clone + Mul<Output = T> + Add<Output = T>
             {
                 type Output = T;
@@ -149,8 +149,8 @@ macro_rules! vec_impl_helper {
                     sum!($(self.$attr_name * rhs.$attr_name),*) as T
                 }
             }
-            
-            impl<T> Sub for $dst<T> 
+
+            impl<T> Sub for $dst<T>
                 where T: Clone + Sub<Output = T>
             {
                 type Output = $dst<T>;
@@ -163,8 +163,8 @@ macro_rules! vec_impl_helper {
                     }
                 }
             }
-            
-            impl<T> Add for $dst<T> 
+
+            impl<T> Add for $dst<T>
                 where T: Clone + Add<Output = T>
             {
                 type Output = $dst<T>;
@@ -177,27 +177,28 @@ macro_rules! vec_impl_helper {
                     }
                 }
             }
-            
-            impl<T> PartialEq for $dst<T> 
-                where T: PartialEq 
+
+            impl<T> PartialEq for $dst<T>
+                where T: PartialEq
             {
                 fn eq(&self, rhs: &Self) -> bool {
-                    //vec_eq!(self.x == rhs.x, self.y == rhs.y)
+// vec_eq!(self.x == rhs.x, self.y == rhs.y)
                     vec_eq!($(self.$attr_name == rhs.$attr_name),*)
-                }       
+                }
                 fn ne(&self, rhs: &Self) -> bool {
                     !self.eq(rhs)
                 }
             }
-            
-            impl<T> $dst<T> 
+
+            impl<T> $dst<T>
                 where T: Mul<Output = T> + Clone + Copy + Zero + NumCast
             {
                 #[allow(dead_code)]
-                pub fn mul_num(&self, rhs: f64) -> $dst<T> {
+                pub fn mul_num<N>(&self, rhs: N) -> $dst<T>
+                    where N: NumCast + Zero + Copy {
                     $dst {
                         $(
-                            $attr_name: num::cast::<f64,T>(num::cast::<T,f64>(self.$attr_name).unwrap() * rhs).unwrap(),
+                            $attr_name: num::cast::<f64,T>(num::cast::<T,f64>(self.$attr_name).unwrap() * num::cast::<N,f64>(rhs).unwrap()).unwrap(),
                         )*
                     }
                 }
@@ -208,7 +209,7 @@ macro_rules! vec_impl_helper {
                     }
                 }
             }
-            
+
         )*
     );
 }
@@ -254,61 +255,59 @@ pub type Vec3f = Vec3<f32>;
 pub type Vec3i = Vec3<i32>;
 
 
-/*
-#[derive(Debug, Copy, Clone)]
-pub struct Vec2f {
-    x: f32,
-    y: f32,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Vec2i {
-    x: i32,
-    y: i32,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Vec3f {
-    x: f32,
-    y: f32,
-    z: f32,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Vec3i {
-    x: i32,
-    y: i32,
-    z: i32,
-}
-*/
-
+// #[derive(Debug, Copy, Clone)]
+// pub struct Vec2f {
+// x: f32,
+// y: f32,
+// }
+//
+// #[derive(Debug, Copy, Clone)]
+// pub struct Vec2i {
+// x: i32,
+// y: i32,
+// }
+//
+// #[derive(Debug, Copy, Clone)]
+// pub struct Vec3f {
+// x: f32,
+// y: f32,
+// z: f32,
+// }
+//
+// #[derive(Debug, Copy, Clone)]
+// pub struct Vec3i {
+// x: i32,
+// y: i32,
+// z: i32,
+// }
+//
 
 
-/*
-macro_rules! norm_helper {
-    ($($dst: ident ( $($attr_name : ident)*);)*) => (
-        $(
-            impl Norm for $dst {
-                type Output = f64;
-                type Normalize = Self;
-                #[allow(dead_code)]
-                fn norm(&self) -> f64 {
-                    (sum!($(self.$attr_name * self.$attr_name),*) as f64).sqrt()
-                }
-                fn normalize(&self) -> $dst {
-                    let mut ret = *self;
-                    ret = ret.mul_num(1.0 / self.norm());
-                    ret
-                }
-            }
-        )*
-    );
-}
 
-norm_helper!(
-    Vec2f (x y);
-    Vec2i (x y);
-    Vec3f (x y z);
-    Vec3i (x y z); 
-);
-*/
+// macro_rules! norm_helper {
+// ($($dst: ident ( $($attr_name : ident)*);)*) => (
+// $(
+// impl Norm for $dst {
+// type Output = f64;
+// type Normalize = Self;
+// #[allow(dead_code)]
+// fn norm(&self) -> f64 {
+// (sum!($(self.$attr_name * self.$attr_name),*) as f64).sqrt()
+// }
+// fn normalize(&self) -> $dst {
+// let mut ret = *self;
+// ret = ret.mul_num(1.0 / self.norm());
+// ret
+// }
+// }
+// )*
+// );
+// }
+//
+// norm_helper!(
+// Vec2f (x y);
+// Vec2i (x y);
+// Vec3f (x y z);
+// Vec3i (x y z);
+// );
+//

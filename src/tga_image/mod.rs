@@ -1,13 +1,13 @@
 mod base;
-
-use self::base::u32_from_le;
+extern crate num;
 
 use std;
 use std::io::prelude::*;
 use std::fs::File;
 use std::ptr::copy as memmove;
 use std::ptr::copy_nonoverlapping as memcpy;
-
+use self::base::u32_from_le;
+use self::num::{Num, NumCast, cast};
 
 // pub trait Image {}
 // impl Image for TGAImage{}
@@ -135,7 +135,7 @@ impl TGAColor {
             Some(())
         }
     }
-    
+
     #[inline]
     #[allow(dead_code)]
     pub fn val(&self) -> u32 {
@@ -228,12 +228,12 @@ fn read_header<R: Read>(reader: &mut R) -> Result<TGAHeader, &str> {
     //     bitsperpixel: buf[16],
     //     imagedescriptor: buf[17],
     // };
-    
-    let hdr = unsafe { std::mem::transmute::<[u8;18], TGAHeader>(buf) };
+
+    let hdr = unsafe { std::mem::transmute::<[u8; 18], TGAHeader>(buf) };
 
     if hdr.width < 1 && hdr.height < 1 && hdr.colormaptype > 1 ||
-       (hdr.colormaptype == 0 && (hdr.colormaporigin > 0 || hdr.colormaplength > 0 || hdr.colormapdepth > 0))
-    {
+       (hdr.colormaptype == 0 &&
+        (hdr.colormaporigin > 0 || hdr.colormaplength > 0 || hdr.colormapdepth > 0)) {
         Err("corrupt TGA header")
     } else {
         Ok(hdr)
@@ -242,7 +242,7 @@ fn read_header<R: Read>(reader: &mut R) -> Result<TGAHeader, &str> {
 
 // #[allow(dead_code)]
 // fn write_header<W: Write>(ec: &mut W) -> Result<(),&str> {
-    
+
 // }
 
 impl TGAImage {
@@ -357,12 +357,12 @@ impl TGAImage {
 
         Some(pixelcount)
     }
-    
-    fn unload_rle_data<W: Write>(&self, dst: &mut W) -> Result<(),&str> {
+
+    fn unload_rle_data<W: Write>(&self, dst: &mut W) -> Result<(), &str> {
         let max_chunk_length = 128;
         let npixels = self.width as usize * self.height as usize;
         let mut curpixel = 0;
-        
+
         while curpixel < npixels {
             let chunkstart = curpixel * self.bytespp as usize;
             let mut curbyte = curpixel * self.bytespp as usize;
@@ -372,7 +372,7 @@ impl TGAImage {
                 let mut succ_eq = true;
                 for i in 0..self.bytespp as usize {
                     if self.data[curbyte + i] == self.data[curbyte + i + self.bytespp as usize] {
-                        succ_eq = true; 
+                        succ_eq = true;
                     } else {
                         succ_eq = false;
                         break;
@@ -392,54 +392,68 @@ impl TGAImage {
                 run_length += 1;
             }
             curpixel += run_length as usize;
-            if raw { dst.write(&[run_length - 1]).unwrap(); }
-            else { dst.write(&[run_length + 127]).unwrap(); }
-            
-            if raw { dst.write(&self.data[chunkstart..(chunkstart + run_length as usize * self.bytespp as usize)]).unwrap(); }
-            else { dst.write(&self.data[chunkstart..(chunkstart + self.bytespp as usize)]).unwrap(); }
+            if raw {
+                dst.write(&[run_length - 1]).unwrap();
+            } else {
+                dst.write(&[run_length + 127]).unwrap();
+            }
+
+            if raw {
+                dst.write(&self.data[chunkstart..(chunkstart +
+                                                  run_length as usize * self.bytespp as usize)])
+                   .unwrap();
+            } else {
+                dst.write(&self.data[chunkstart..(chunkstart + self.bytespp as usize)]).unwrap();
+            }
         }
-                          
+
         Ok(())
     }
-    
+
     fn swap_line(&mut self, dst_idx: usize, src_idx: usize, bytes_per_line: usize) {
         let mut tmp_line = vec![0u8;bytes_per_line];
-        
+
         unsafe {
-            memmove(self.data[src_idx..].as_ptr(), tmp_line.as_mut_ptr(), bytes_per_line);
-            memmove(self.data[dst_idx..].as_ptr(), self.data[src_idx..].as_mut_ptr(), bytes_per_line);
-            memmove(tmp_line.as_ptr(), self.data[dst_idx..].as_mut_ptr(),bytes_per_line);
+            memmove(self.data[src_idx..].as_ptr(),
+                    tmp_line.as_mut_ptr(),
+                    bytes_per_line);
+            memmove(self.data[dst_idx..].as_ptr(),
+                    self.data[src_idx..].as_mut_ptr(),
+                    bytes_per_line);
+            memmove(tmp_line.as_ptr(),
+                    self.data[dst_idx..].as_mut_ptr(),
+                    bytes_per_line);
         }
     }
-    
+
     #[allow(dead_code)]
     pub fn flip_vertically(&mut self) -> Result<(), &str> {
         if self.data.is_empty() {
             return Err("Error: data buffer len is 0.");
         }
-  
+
         let bytes_per_line = self.width as usize * self.bytespp as usize;
         let half = self.height / 2;
-        
+
         for i in 0..half as usize {
             let l1 = i * bytes_per_line;
-            let l2 = (self.height as usize - 1 -i) * bytes_per_line;
+            let l2 = (self.height as usize - 1 - i) * bytes_per_line;
             self.swap_line(l1, l2, bytes_per_line);
         }
-        
+
         Ok(())
     }
-    
+
     #[allow(dead_code)]
     pub fn flip_horizontally(&mut self) -> Result<(), &str> {
         if self.data.is_empty() {
             return Err("Error: data buffer len is 0.");
         }
-        
+
         // let half = self.width >> 1;
         let half = self.width / 2;
         let width = self.width as usize;
-        
+
         for i in 0..half as usize {
             for j in 0..self.height as usize {
                 let color_1 = self.get(i, j);
@@ -451,17 +465,19 @@ impl TGAImage {
 
         Ok(())
     }
-    
+
     #[allow(dead_code)]
-    fn scale(&mut self, w: usize, h: usize) -> Result<(),&str> {
-        if self.data.is_empty() { return Err("Error: data buffer len is 0."); }
+    fn scale(&mut self, w: usize, h: usize) -> Result<(), &str> {
+        if self.data.is_empty() {
+            return Err("Error: data buffer len is 0.");
+        }
         let mut tdata = vec![0;w * h * self.bytespp as usize];
         let nlinebytes = w * self.bytespp as usize;
         let olinebytes = self.width as usize * self.bytespp as usize;
         let mut nscanline = 0;
         let mut oscanline = 0;
         let mut erry = 0isize;
-        
+
         for _ in 0..self.height as usize {
             let mut errx = (self.width as usize - w) as isize;
             let mut nx = -self.bytespp;
@@ -472,11 +488,10 @@ impl TGAImage {
                 while errx > self.width as isize {
                     errx -= self.width as isize;
                     nx += w as i32;
-                    unsafe { memcpy(
-                                self.data[(oscanline + ox as usize)..].as_ptr(), 
-                                tdata[(nscanline + nx as usize)..].as_mut_ptr(),
-                                self.bytespp as usize
-                                ); 
+                    unsafe {
+                        memcpy(self.data[(oscanline + ox as usize)..].as_ptr(),
+                               tdata[(nscanline + nx as usize)..].as_mut_ptr(),
+                               self.bytespp as usize);
                     }
                 }
             }
@@ -484,27 +499,34 @@ impl TGAImage {
             oscanline += olinebytes;
             while erry > self.height as isize {
                 if erry >= (self.height << 2) as isize {
-                    unsafe{ memcpy(tdata[nscanline..].as_ptr(), tdata[(nscanline + nlinebytes)..].as_mut_ptr(), nlinebytes); }
+                    unsafe {
+                        memcpy(tdata[nscanline..].as_ptr(),
+                               tdata[(nscanline + nlinebytes)..].as_mut_ptr(),
+                               nlinebytes);
+                    }
                 }
                 erry -= self.height as isize;
                 nscanline += nlinebytes;
             }
         }
-        
+
         self.width = w as i32;
         self.height = h as i32;
         self.data = tdata;
-         
-        Ok(())       
-         
+
+        Ok(())
+
     }
 
     #[allow(dead_code)]
-    pub fn get(&self, x: usize, y: usize) -> TGAColor {
-        if self.data.is_empty() || x >= self.width as usize ||
-           y >= self.height as usize {
-            //return Err("Warning: x (y, x > width, y > height, or no data to get TGAColor.");
-            return TGAColor::new()        
+    pub fn get<X, Y>(&self, x: X, y: Y) -> TGAColor
+        where X: Num + Copy + NumCast, Y: Num + Copy + NumCast
+    {
+        let x = cast::<X, usize>(x).unwrap();
+        let y = cast::<Y, usize>(y).unwrap();
+        if self.data.is_empty() || x >= self.width as usize || y >= self.height as usize {
+            // return Err("Warning: x (y, x > width, y > height, or no data to get TGAColor.");
+            return TGAColor::new();
         }
         let mut ret = TGAColor::new();
         let raw_val = u32_from_le(
@@ -513,19 +535,23 @@ impl TGAImage {
         ret.set_val(raw_val, self.bytespp as usize);
         return ret;
     }
-    
+
     #[allow(dead_code)]
-    pub fn set(&mut self, x: usize, y: usize, color: TGAColor) -> bool {
-        if self.data.is_empty() || x >= self.width as usize ||
-           y >= self.height as usize { return false }   
-        unsafe {
-            memcpy(
-            color.raw().as_ptr(),
-            self.data[((x + y * self.width as usize) * self.bytespp as usize)..].as_mut_ptr(),
-            self.bytespp as usize
-            );
+    pub fn set<X, Y>(&mut self, x: X, y: Y, color: TGAColor) -> bool
+        where X: Num + Copy + NumCast, Y: Num + Copy + NumCast
+    {
+        let x = cast::<X, usize>(x).unwrap();
+        let y = cast::<Y, usize>(y).unwrap();
+        if self.data.is_empty() || x >= self.width as usize || y >= self.height as usize {
+            return false;
         }
-        
+        unsafe {
+            memcpy(color.raw().as_ptr(),
+                   self.data[((x + y * self.width as usize) * self.bytespp as usize)..]
+                       .as_mut_ptr(),
+                   self.bytespp as usize);
+        }
+
         true
     }
 
@@ -556,15 +582,14 @@ impl TGAImage {
 
         Some(ret)
     }
-    
+
     #[allow(dead_code)]
     pub fn write_tga_file(&self, filename: &str, rle: bool) -> Result<(), &str> {
         let developer_area_ref = [0u8; 4];
         let extension_area_ref = [0u8; 4];
 
-        let footer = [b'T', b'R', b'U', b'E', b'V', b'I', b'S', 
-                      b'I', b'O', b'N', b'-', b'X', b'F', b'I',
-                      b'L', b'E', b'.', b'\0'];
+        let footer = [b'T', b'R', b'U', b'E', b'V', b'I', b'S', b'I', b'O', b'N', b'-', b'X',
+                      b'F', b'I', b'L', b'E', b'.', b'\0'];
 
         let path = std::path::Path::new(filename);
         let mut file = match std::fs::File::create(&path) {
@@ -577,45 +602,66 @@ impl TGAImage {
         header.width = self.width as u16;
         header.height = self.height as u16;
         header.datatypecode = if self.bytespp == GRAYSCALE as i32 {
-            if rle { 11 } else { 3 }
+            if rle {
+                11
+            } else {
+                3
+            }
         } else {
-            if rle { 10 } else { 2 }
+            if rle {
+                10
+            } else {
+                2
+            }
         };
         header.imagedescriptor = 0x20;
-        
-        let header_bytes_buf = unsafe { std::mem::transmute::<TGAHeader,[u8;18]>(header) };
+
+        let header_bytes_buf = unsafe { std::mem::transmute::<TGAHeader, [u8; 18]>(header) };
         match file.write(&header_bytes_buf) {
-            Err(_) => return Err("Error: TGAImage::write_tga_file can't dump the tga file.(header_bytes_buf)"),
-            _ => {},
+            Err(_) => {
+                return Err("Error: TGAImage::write_tga_file can't dump the tga \
+                            file.(header_bytes_buf)")
+            }
+            _ => {}
         }
-        
+
         if !rle {
             match file.write(&self.data[0..(self.width * self.height * self.bytespp) as usize]) {
-                Err(_) => return Err("Error: TGAImage::write_tga_file can't unload raw data.(self.data)"),
-                _ => {},
+                Err(_) => {
+                    return Err("Error: TGAImage::write_tga_file can't unload raw data.(self.data)")
+                }
+                _ => {}
             };
         } else {
             match self.unload_rle_data(&mut file) {
                 Err(_) => return Err("{}\nError: TGAImage::write_tga_file can't unload rle data."),
-                _ => {},
-            }      
+                _ => {}
+            }
         };
-        
-        match file.write(&developer_area_ref){
-            Err(_) => return Err("Error: TGAImage::write_tga_file can't dump the tga file.(developer_area_ref)"),
+
+        match file.write(&developer_area_ref) {
+            Err(_) => {
+                return Err("Error: TGAImage::write_tga_file can't dump the tga \
+                            file.(developer_area_ref)")
+            }
             _ => {}
         }
-        
+
         match file.write(&extension_area_ref) {
-            Err(_) => return Err("Error: TGAImage::write_tga_file can't dump the tga file.(extension_area_ref)"),
+            Err(_) => {
+                return Err("Error: TGAImage::write_tga_file can't dump the tga \
+                            file.(extension_area_ref)")
+            }
             _ => {}
         }
-        
+
         match file.write(&footer) {
-            Err(_) => return Err("Error: TGAImage::write_tga_file can't dump the tga file.(footer)"),
+            Err(_) => {
+                return Err("Error: TGAImage::write_tga_file can't dump the tga file.(footer)")
+            }
             _ => {}
         }
-        
+
         Ok(())
     }
 }
