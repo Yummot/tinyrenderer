@@ -34,28 +34,39 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
      }
 }
 
+fn barycentric(points: &[Vec2i], point: Vec2i) -> Vec3f {
+    let u = cross(Vec3f::new(points[2][0]-points[0][0], points[1][0]-points[0][0], points[0][0]-point[0]), Vec3f::new(points[2][1]-points[0][1], points[1][1]-points[0][1], points[0][1]-point[1])); 
+    if u[2].abs() < 1.0 { return Vec3f::new(-1.0,1.0,1.0); } // triangle is degenerate, in this case return smth with negative coordinates 
+    let ret = Vec3f::new(1.0 - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
+    return ret
+}
+
 #[allow(non_snake_case)]
-fn triangle(mut v0: Vec2i, mut v1: Vec2i, mut v2: Vec2i, image: &mut TGAImage, color: TGAColor) {   
-    if (v0.y == v1.y &&  v0.y == v2.y) && (v0.x == v1.x &&  v0.x == v2.x) { return }
-    if v0.y > v1.y { std::mem::swap(&mut v0, &mut v1); }
-    if v0.y > v2.y { std::mem::swap(&mut v0, &mut v2); }
-    if v1.y > v2.y { std::mem::swap(&mut v1, &mut v2); }   
+fn triangle(points: &[Vec2i], image: &mut TGAImage, color: TGAColor) {   
+    let mut bboxmin = Vec2i::new(image.get_width() - 1, image.get_height() - 1);
+    let mut bboxmax = Vec2i::new(0, 0);
+    let clamp = Vec2i::new(image.get_width() - 1, image.get_height() - 1);
     
-    let total_height = v2.y -v0.y;
-    for i in 0..total_height {
-        let second_half = i > (v1.y - v0.y) || v1.y == v0.y;
-        let segment_height = if second_half { v2.y - v1.y } else { v1.y - v0.y } as f32;
-        let alpha = i as f32 / total_height as f32;
-        let beta = if second_half { (i - v1.y + v0.y) as f32 / segment_height }
-                   else { i as f32 / segment_height };
-        
-        let mut A = v0 + (v2 - v0).mul_num(alpha);
-        let mut B = if second_half { v1 + (v2 - v1).mul_num(beta) } else { v0 + (v1 - v0).mul_num(beta) };
-        
-        if A.x > B.x { std::mem::swap(&mut A, &mut B); }
-        for j in A.x..(B.x + 1) {
-            image.set(j, v0.y + i, color);
+    for i in 0..3 {
+        for j in 0..2 {
+            bboxmin[j] = std::cmp::max(0, std::cmp::min(bboxmin[j], points[i][j]));
+            bboxmax[j] = std::cmp::min(clamp[j], std::cmp::max(bboxmax[j], points[i][j]));
         }
+    }
+    
+    let mut p = Vec2i::new(bboxmin.x, bboxmin.y);
+    while p.x <= bboxmax.x {
+        p.y = bboxmin.y;
+        while p.y <= bboxmax.y {
+            let bc_screen = barycentric(points, p);
+            if bc_screen.x < 0.0 || bc_screen.y <0.0 || bc_screen.z < 0.0 { 
+                p.y += 1;
+                continue 
+            }
+            image.set(p.x, p.y, color);
+            p.y += 1;
+        }
+        p.x += 1;
     }
 }
 
@@ -68,11 +79,13 @@ fn main() {
     
     let t0 = [Vec2i::new(10, 70),   Vec2i::new(50, 160),  Vec2i::new(70, 80)]; 
     let t1 = [Vec2i::new(180, 50),  Vec2i::new(150, 1),   Vec2i::new(70, 180)]; 
-    let t2 = [Vec2i::new(180, 150), Vec2i::new(120, 160), Vec2i::new(130, 180)]; 
+    let t2 = [Vec2i::new(180, 150), Vec2i::new(120, 160), Vec2i::new(130, 180)];
+    let t = [Vec2i::new(10,10), Vec2i::new(100, 30), Vec2i::new(190, 160)];  
     
-    triangle(t0[0], t0[1], t0[2], &mut image, white);
-    triangle(t1[0], t1[1], t1[2], &mut image, red);
-    triangle(t2[0], t2[1], t2[2], &mut image, blue);
+    triangle(&t0, &mut image, white);
+    triangle(&t1, &mut image, red);
+    triangle(&t2, &mut image, blue);
+    triangle(&t, &mut image, TGAColor::with_color(RGBAColor(120,80,64,255)));
     
     image.flip_vertically().unwrap();
     image.write_tga_file("lesson2_output.tga", tga_image::WRITE_RLE_FILE).unwrap();
