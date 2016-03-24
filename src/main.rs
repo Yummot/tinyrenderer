@@ -35,7 +35,7 @@ fn main() {
     let _red   = TGAColor::with_color(RGBAColor(255,0,0,255));
     let args: Vec<String> = std::env::args().collect();
     let model = if args.len() == 1 {
-        model::Model::open("obj/0.obj")
+        model::Model::open("obj/african_head.obj")
     } else if args.len() == 2 {
         if args[1].find(".obj") != None {
             model::Model::open(&args[1])
