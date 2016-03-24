@@ -35,38 +35,27 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
 }
 
 #[allow(non_snake_case)]
-fn triangle(mut v0: Vec2i, mut v1: Vec2i, mut v2: Vec2i, image: &mut TGAImage, color: TGAColor) {    
+fn triangle(mut v0: Vec2i, mut v1: Vec2i, mut v2: Vec2i, image: &mut TGAImage, color: TGAColor) {   
+    if (v0.y == v1.y &&  v0.y == v2.y) && (v0.x == v1.x &&  v0.x == v2.x) { return }
     if v0.y > v1.y { std::mem::swap(&mut v0, &mut v1); }
     if v0.y > v2.y { std::mem::swap(&mut v0, &mut v2); }
     if v1.y > v2.y { std::mem::swap(&mut v1, &mut v2); }   
     
     let total_height = v2.y -v0.y;
-    for y in v0.y..(v1.y + 1) {
-        let segment_height = v1.y - v0.y + 1;
-        let alpha = (y as f32 - v0.y as f32) / total_height as f32;
-        let beta = (y as f32 - v0.y as f32) / segment_height as f32;
+    for i in 0..total_height {
+        let second_half = i > (v1.y - v0.y) || v1.y == v0.y;
+        let segment_height = if second_half { v2.y - v1.y } else { v1.y - v0.y } as f32;
+        let alpha = i as f32 / total_height as f32;
+        let beta = if second_half { (i - v1.y + v0.y) as f32 / segment_height }
+                   else { i as f32 / segment_height };
         
         let mut A = v0 + (v2 - v0).mul_num(alpha);
-        let mut B = v0 + (v1 - v0).mul_num(beta);
+        let mut B = if second_half { v1 + (v2 - v1).mul_num(beta) } else { v0 + (v1 - v0).mul_num(beta) };
         
         if A.x > B.x { std::mem::swap(&mut A, &mut B); }
         for j in A.x..(B.x + 1) {
-            image.set(j, y, color);
+            image.set(j, v0.y + i, color);
         }
-    }
-    
-    for y in v1.y..(v2.y + 1) {
-        let segment_height = v2.y - v1.y + 1;
-        let alpha = (y as f32 - v0.y as f32) / total_height as f32;
-        let beta = (y as f32 - v1.y as f32) / segment_height as f32;
-        
-        let mut A = v0 + (v2 - v0).mul_num(alpha);
-        let mut B = v1 + (v2 - v1).mul_num(beta);
-        
-        if A.x > B.x { std::mem::swap(&mut A, &mut B); }
-        for j in A.x..(B.x + 1) {
-            image.set(j, y, color);
-        }        
     }
 }
 
