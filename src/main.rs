@@ -71,21 +71,51 @@ fn triangle(points: &[Vec2i], image: &mut TGAImage, color: TGAColor) {
 }
 
 fn main() {
-    let white = TGAColor::with_color(RGBAColor(255,255,255,255));
-    let red = TGAColor::with_color(RGBAColor(255,0,0,255));
-    let blue = TGAColor::with_color(RGBAColor(0,0,255,255));
+    // let white = TGAColor::with_color(RGBAColor(255,255,255,255));
+    // let red = TGAColor::with_color(RGBAColor(255,0,0,255));
+    // let blue = TGAColor::with_color(RGBAColor(0,0,255,255));
+    let width = 800;
+    let height = 800;
     
-    let mut image = TGAImage::with_info(200,200,RGB);
+    let args: Vec<String> = std::env::args().collect();
     
-    let t0 = [Vec2i::new(10, 70),   Vec2i::new(50, 160),  Vec2i::new(70, 80)]; 
-    let t1 = [Vec2i::new(180, 50),  Vec2i::new(150, 1),   Vec2i::new(70, 180)]; 
-    let t2 = [Vec2i::new(180, 150), Vec2i::new(120, 160), Vec2i::new(130, 180)];
-    let t = [Vec2i::new(10,10), Vec2i::new(100, 30), Vec2i::new(190, 160)];  
+    let model = if args.len() == 1 { model::Model::open("obj/african_head.obj") }
+                   else if args.len() == 2 { 
+                       if args[1].find(".obj") != None { model::Model::open(&args[1]) } 
+                       else { panic!("Error: Parameter: {} is not an obj file.", args[1]); }
+                   }
+                   else { panic!("Too many parameters input."); };
     
-    triangle(&t0, &mut image, white);
-    triangle(&t1, &mut image, red);
-    triangle(&t2, &mut image, blue);
-    triangle(&t, &mut image, TGAColor::with_color(RGBAColor(120,80,64,255)));
+    let mut image = TGAImage::with_info(width,height,RGB);
+    
+    let light_dir = Vec3f::new(0, 0, -1);
+    for i in 0..model.nfaces() {
+        let face = model.face(i);
+        let mut screen_coords = [Vec2i::new(0,0);3];
+        let mut world_coords = [Vec3f::new(0,0,0);3];
+        for j in 0..3 {
+            let v = model.vert(face[j] as usize);
+            screen_coords[j] = Vec2i::new((v.x+1.0)* width as f32 / 2.0, (v.y+1.0) * height as f32 / 2.0);
+            world_coords[j]  = v;
+        }
+        let mut n = cross((world_coords[2]-world_coords[0]),(world_coords[1]-world_coords[0]));
+        n = n.normalize();
+        let intensity = n * light_dir;
+        if intensity > 0.0 {
+            triangle(&screen_coords, &mut image, TGAColor::with_color(RGBAColor((intensity * 255.0) as u8, (intensity * 255.0) as u8, (intensity * 255.0) as u8, 255)));
+        }
+    }
+    
+    // test triangle function
+    // let t0 = [Vec2i::new(10, 70),   Vec2i::new(50, 160),  Vec2i::new(70, 80)]; 
+    // let t1 = [Vec2i::new(180, 50),  Vec2i::new(150, 1),   Vec2i::new(70, 180)]; 
+    // let t2 = [Vec2i::new(180, 150), Vec2i::new(120, 160), Vec2i::new(130, 180)];
+    // let t = [Vec2i::new(10,10), Vec2i::new(100, 30), Vec2i::new(190, 160)];  
+    
+    // triangle(&t0, &mut image, white);
+    // triangle(&t1, &mut image, red);
+    // triangle(&t2, &mut image, blue);  `
+    // triangle(&t, &mut image, TGAColor::with_color(RGBAColor(120,80,64,255)));
     
     image.flip_vertically().unwrap();
     image.write_tga_file("lesson2_output.tga", tga_image::WRITE_RLE_FILE).unwrap();
