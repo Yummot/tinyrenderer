@@ -35,11 +35,11 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
 }
 
 #[allow(non_snake_case)]
-fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, color: TGAColor) {   
+fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, color: TGAColor, zbuffer: &mut [i32]) {   
     if (pts[0].y == pts[1].y &&  pts[0].y == pts[1].y) && (pts[0].x == pts[1].x &&  pts[0].x == pts[2].x) { return }
-    if pts[0].y > pts[1].y { std::mem::swap(&mut pts[0], &mut pts[1]); }
-    if pts[0].y > pts[2].y { std::mem::swap(&mut pts[0], &mut pts[2]); }
-    if pts[1].y > pts[2].y { std::mem::swap(&mut pts[1], &mut pts[2]); }   
+    if pts[0].y > pts[1].y { pts.swap(0,1); }
+    if pts[0].y > pts[2].y { pts.swap(0,2); }
+    if pts[1].y > pts[2].y { pts.swap(1,2); }   
     
     let total_height = pts[2].y -pts[0].y;
     for i in 0..total_height {
@@ -54,7 +54,14 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, color: TGAColor) {
         
         if A.x > B.x { std::mem::swap(&mut A, &mut B); }
         for j in A.x..(B.x + 1) {
-            image.set(j, pts[0].y + i, color);
+            let phi = if B.x == A.x { 1. }
+                      else { (j - A.x) as f32 / (B.x - A.x) as f32 };
+            let p = A + (B - A).mul_num(phi);
+            let idx = (j + (pts[0].y + i) * image.get_width()) as usize;
+            if zbuffer[idx] < p.z {
+                zbuffer[idx] = p.z;
+                image.set(j, pts[0].y + i, color);
+            }
         }
     }
 }
@@ -62,7 +69,7 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, color: TGAColor) {
 fn main() {
     let width = 800;
     let height = 800;
-    
+    let depth = 255;
     let args: Vec<String> = std::env::args().collect();
     
     let model = if args.len() == 1 { model::Model::open("obj/african_head.obj") }
@@ -74,21 +81,28 @@ fn main() {
     
     let mut image = TGAImage::with_info(width,height,RGB);
     
+    let mut zbuffer = vec![std::i32::MIN; width as usize * height as usize];
+    
     let light_dir = Vec3f::new(0, 0, -1);
     for i in 0..model.nfaces() {
         let face = model.face(i);
-        let mut screen_coords = [Vec2i::new(0,0);3];
+        let mut screen_coords = [Vec3i::new(0,0,0);3];
         let mut world_coords = [Vec3f::new(0,0,0);3];
         for j in 0..3 {
             let v = model.vert(face[j] as usize);
-            screen_coords[j] = Vec2i::new((v.x+1.0)* width as f32 / 2.0, (v.y+1.0) * height as f32 / 2.0);
+            screen_coords[j] = Vec3i::new((v.x+1.0)* width as f32 / 2.0, (v.y+1.0) * height as f32 / 2.0, (v.z + 1.0) * depth as f32 /2.0);
             world_coords[j]  = v;
         }
         let mut n = cross((world_coords[2]-world_coords[0]),(world_coords[1]-world_coords[0]));
         n = n.normalize();
         let intensity = n * light_dir;
         if intensity > 0.0 {
-            triangle(&screen_coords, &mut image, TGAColor::with_color(RGBAColor((intensity * 255.0) as u8, (intensity * 255.0) as u8, (intensity * 255.0) as u8, 255)));
+            triangle(
+                &mut screen_coords, 
+                &mut image, 
+                TGAColor::with_color(RGBAColor((intensity * 255.0) as u8, (intensity * 255.0) as u8, (intensity * 255.0) as u8, 255)),
+                &mut zbuffer
+                );
         }
     }
     

@@ -2,7 +2,7 @@ pub use super::std::ops::*;
 pub use super::std::cmp::PartialEq;
 extern crate num;
 
-use self::num::{Zero, NumCast};
+use self::num::{Zero, NumCast, Num};
 
 pub trait Norm {
     type Output;
@@ -137,6 +137,50 @@ pub struct Vec3<T> {
     pub z: T,
 }
 
+impl<T> ::std::ops::Index<usize> for Vec2<T> {
+    type Output = T;
+    fn index<'a>(&'a self, index: usize) -> &'a T {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            _ => panic!("Error: Index out of bounds.")
+        }
+    }
+} 
+
+impl<T> ::std::ops::IndexMut<usize> for Vec2<T> {
+    fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut T {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            _ => panic!("Error: Index out of bounds.")
+        }
+    }
+}
+
+impl<T> ::std::ops::Index<usize> for Vec3<T> {
+    type Output = T;
+    fn index<'a>(&'a self, index: usize) -> &'a T {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("Error: Index out of bounds.")
+        }
+    }
+} 
+
+impl<T> ::std::ops::IndexMut<usize> for Vec3<T> {
+    fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut T {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("Error: Index out of bounds.")
+        }
+    }
+}
+
 macro_rules! vec_impl_helper {
     ($($dst : ident > ( $($attr_name : ident)*) ;)*) => (
         $(
@@ -203,9 +247,10 @@ macro_rules! vec_impl_helper {
                     }
                 }
                 #[allow(dead_code)]
-                pub fn new($($attr_name : T),*) -> $dst<T> {
+                pub fn new<N>($($attr_name : N),*) -> $dst<T>
+                    where N: Num + NumCast + Copy, T: Num + NumCast + Copy {
                     $dst {
-                        $($attr_name: $attr_name,)*
+                        $($attr_name: num::cast::<N,T>($attr_name).unwrap(),)*
                     }
                 }
             }
@@ -237,7 +282,10 @@ macro_rules! norm_helper {
     );
 }
 
-
+pub fn cross<T>(v1: Vec3<T>, v2: Vec3<T>) -> Vec3<T> 
+    where T: Num + NumCast + Copy + Mul<Output=T> + Sub<Output=T> {
+    return Vec3::new(v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x);
+}
 
 vec_impl_helper!(
     Vec2 > (x y);
@@ -249,65 +297,10 @@ norm_helper!(
     Vec3 > (x y z);
 );
 
+
+
 pub type Vec2f = Vec2<f32>;
 pub type Vec2i = Vec2<i32>;
 pub type Vec3f = Vec3<f32>;
 pub type Vec3i = Vec3<i32>;
 
-
-// #[derive(Debug, Copy, Clone)]
-// pub struct Vec2f {
-// x: f32,
-// y: f32,
-// }
-//
-// #[derive(Debug, Copy, Clone)]
-// pub struct Vec2i {
-// x: i32,
-// y: i32,
-// }
-//
-// #[derive(Debug, Copy, Clone)]
-// pub struct Vec3f {
-// x: f32,
-// y: f32,
-// z: f32,
-// }
-//
-// #[derive(Debug, Copy, Clone)]
-// pub struct Vec3i {
-// x: i32,
-// y: i32,
-// z: i32,
-// }
-//
-
-
-
-// macro_rules! norm_helper {
-// ($($dst: ident ( $($attr_name : ident)*);)*) => (
-// $(
-// impl Norm for $dst {
-// type Output = f64;
-// type Normalize = Self;
-// #[allow(dead_code)]
-// fn norm(&self) -> f64 {
-// (sum!($(self.$attr_name * self.$attr_name),*) as f64).sqrt()
-// }
-// fn normalize(&self) -> $dst {
-// let mut ret = *self;
-// ret = ret.mul_num(1.0 / self.norm());
-// ret
-// }
-// }
-// )*
-// );
-// }
-//
-// norm_helper!(
-// Vec2f (x y);
-// Vec2i (x y);
-// Vec3f (x y z);
-// Vec3i (x y z);
-// );
-//
