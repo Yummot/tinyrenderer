@@ -2,7 +2,7 @@ pub use super::std::ops::*;
 pub use super::std::cmp::PartialEq;
 extern crate num;
 
-use self::num::{Zero, NumCast, Num};
+pub use self::num::*;
 
 pub trait Norm {
     type Output;

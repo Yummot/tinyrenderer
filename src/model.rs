@@ -78,13 +78,26 @@ impl Model {
             .map(|x| solver(x, &mut faces_vec, &mut verts_vec, &mut norm_vec, &mut uv_vec))
             .collect();
 
-        Model {
+        let mut ret = Model {
             verts_: verts_vec,
             faces_: faces_vec,
             norms_: norm_vec,
             uv_: uv_vec,
             diffusemap_: TGAImage::new(),
-        }
+        };
+        
+        ret.load_texture(filename, "_diffuse.tga");
+        //println!("{:?}", ret);
+        ret
+    }
+    
+    #[allow(dead_code)]
+    fn load_texture(&mut self, filename: &str, suffix: &str) {
+        let prefix = filename.split('.').next().unwrap();
+        let texname = prefix.to_string() + suffix;
+        println!("{}", texname);
+        self.diffusemap_.read_tga_file(&texname);
+        self.diffusemap_.flip_vertically().unwrap();
     }
     #[allow(dead_code)]
     pub fn nverts(&self) -> usize {
@@ -101,6 +114,19 @@ impl Model {
     #[allow(dead_code)]
     pub fn face(&self, idx: usize) -> Vec<Vec3i> {
         self.faces_[idx].clone()
+    }
+    #[allow(dead_code)]
+    pub fn diffuse(&self, uv: Vec2i) -> TGAColor {
+        self.diffusemap_.get(uv.x, uv.y)
+    }
+    #[allow(dead_code)]
+    pub fn uv<M,N>(&self, iface: M, nvert: N) -> Vec2i
+        where M: Num + NumCast + Copy, N: Num + NumCast + Copy {
+        let idx = self.faces_[cast::<M,usize>(iface).unwrap()][cast::<N, usize>(nvert).unwrap()][1] as usize;
+        Vec2i::new(
+            self.uv_[idx].x * self.diffusemap_.get_width() as f32,
+            self.uv_[idx].y * self.diffusemap_.get_height() as f32
+            )
     }
 }
 

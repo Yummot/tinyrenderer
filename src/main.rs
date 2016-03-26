@@ -36,7 +36,7 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
 
 
 #[allow(non_snake_case)]
-fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, color: TGAColor, zbuffer: &mut [i32]) {   
+fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &mut [Vec2i], intensity: f32, zbuffer: &mut [i32]) {   
     if (pts[0].y == pts[1].y &&  pts[0].y == pts[1].y) && (pts[0].x == pts[1].x &&  pts[0].x == pts[2].x) { return }
     if pts[0].y > pts[1].y { pts.swap(0,1); }
     if pts[0].y > pts[2].y { pts.swap(0,2); }
@@ -52,16 +52,29 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, color: TGAColor, zbuffer: &
         
         let mut A = pts[0] + (pts[2] - pts[0]).mul_num(alpha);
         let mut B = if second_half { pts[1] + (pts[2] - pts[1]).mul_num(beta) } else { pts[0] + (pts[1] - pts[0]).mul_num(beta) };
+        let mut uvA = uv[0] + (uv[2] - uv[0]).mul_num(alpha);
+        let mut uvB = if second_half { uv[1] + (uv[2] - uv[1]).mul_num(beta) } else { uv[0] + (uv[1] - uv[0]).mul_num(beta) };
         
-        if A.x > B.x { std::mem::swap(&mut A, &mut B); }
+        if A.x > B.x { 
+            std::mem::swap(&mut A, &mut B); 
+            std::mem::swap(&mut uvA, &mut uvB);
+        }
         for j in A.x..(B.x + 1) {
             let phi = if B.x == A.x { 1. }
                       else { (j - A.x) as f32 / (B.x - A.x) as f32 };
             let p = A + (B - A).mul_num(phi);
-            let idx = (j + (pts[0].y + i) * image.get_width()) as usize;
+            let uvp = uvA + (uvB - uvA).mul_num(phi);
+            let idx = (p.x + p.y * image.get_width()) as usize;
             if zbuffer[idx] < p.z {
                 zbuffer[idx] = p.z;
-                image.set(j, pts[0].y + i, color);
+                let color = model.diffuse(uvp);
+                image.set(j, pts[0].y + i, 
+                    TGAColor::with_color(
+                        RGBAColor(
+                            (color.r as f32 * intensity) as u8, 
+                            (color.g as f32 * intensity) as u8, 
+                            (color.b as f32 * intensity) as u8, 
+                            0)));
             }
         }
     }
@@ -99,10 +112,16 @@ fn main() {
         n = n.normalize();
         let intensity = n * light_dir;
         if intensity > 0.0 {
+            let mut uv = vec![];
+            for k in 0..3 {
+                uv.push(model.uv(i, k));
+            }
             triangle(
                 &mut screen_coords, 
                 &mut image, 
-                TGAColor::with_color(RGBAColor((intensity * 255.0) as u8, (intensity * 255.0) as u8, (intensity * 255.0) as u8, 255)),
+                &model,
+                &mut uv,
+                intensity,
                 &mut zbuffer
                 );
         }

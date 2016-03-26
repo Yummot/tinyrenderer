@@ -309,35 +309,35 @@ impl TGAImage {
         let mut currentbyte = 0;
         let mut colorbuffer = TGAColor::new();
         let mut chunkheader = [0u8];
-        let mut cache = vec![0u8;self.bytespp as usize];
 
         loop {
             file.read(&mut chunkheader).unwrap();
             if chunkheader[0] < 128 {
                 chunkheader[0] += 1;
                 for _ in 0..chunkheader[0] {
+                    let mut cache = vec![0u8;self.bytespp as usize];
                     file.read(&mut cache).unwrap(); // TODO remove unwrap and refactor
 
-                    colorbuffer.set(&cache, self.bytespp as usize);
+                    colorbuffer.set(&cache[0..], self.bytespp as usize);
                     let raw = colorbuffer.raw();
-
+                    let a = true;
                     for t in 0..self.bytespp as usize {
                         self.data[currentbyte] = raw[t];
                         currentbyte += 1;
                     }
                     currentpixel += 1;
                     if currentpixel > pixelcount {
-                        println!("Too many pixels read");
                         return None;
                     }
                 }
             } else {
                 chunkheader[0] -= 127;
+                let mut cache = vec![0u8;self.bytespp as usize];
                 file.read(&mut cache).unwrap(); // TODO remove unwrap and refactor
 
-                colorbuffer.set(&cache, self.bytespp as usize);
+                colorbuffer.set(&cache[0..], self.bytespp as usize);
                 let raw = colorbuffer.raw();
-
+                let a = true;
                 for _ in 0..chunkheader[0] {
                     for t in 0..self.bytespp as usize {
                         self.data[currentbyte] = raw[t];
@@ -345,12 +345,11 @@ impl TGAImage {
                     }
                     currentpixel += 1;
                     if currentpixel > pixelcount {
-                        println!("Too many pixels read");
                         return None;
                     }
                 }
             }
-            if currentpixel < pixelcount {
+            if currentpixel >= pixelcount {
                 break;
             }
         }
