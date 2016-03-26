@@ -35,31 +35,36 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
 }
 
 #[allow(non_snake_case)]
-fn triangle(v0: &mut [Vec3i], image: &mut TGAImage, color: TGAColor) {   
-    if (v0.y == v1.y &&  v0.y == v2.y) && (v0.x == v1.x &&  v0.x == v2.x) { return }
-    if v0.y > v1.y { std::mem::swap(&mut v0, &mut v1); }
-    if v0.y > v2.y { std::mem::swap(&mut v0, &mut v2); }
-    if v1.y > v2.y { std::mem::swap(&mut v1, &mut v2); }   
+fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, color: TGAColor) {   
+    if (pts[0].y == pts[1].y &&  pts[0].y == pts[1].y) && (pts[0].x == pts[1].x &&  pts[0].x == pts[2].x) { return }
+    if pts[0].y > pts[1].y { std::mem::swap(&mut pts[0], &mut pts[1]); }
+    if pts[0].y > pts[2].y { std::mem::swap(&mut pts[0], &mut pts[2]); }
+    if pts[1].y > pts[2].y { std::mem::swap(&mut pts[1], &mut pts[2]); }   
     
-    let total_height = v2.y -v0.y;
+    let total_height = pts[2].y -pts[0].y;
     for i in 0..total_height {
-        let second_half = i > (v1.y - v0.y) || v1.y == v0.y;
-        let segment_height = if second_half { v2.y - v1.y } else { v1.y - v0.y } as f32;
+        let second_half = i > (pts[1].y - pts[0].y) || pts[1].y == pts[0].y;
+        let segment_height = if second_half { pts[2].y - pts[1].y } else { pts[1].y - pts[0].y } as f32;
         let alpha = i as f32 / total_height as f32;
-        let beta = if second_half { (i - v1.y + v0.y) as f32 / segment_height }
+        let beta = if second_half { (i - pts[1].y + pts[0].y) as f32 / segment_height }
                    else { i as f32 / segment_height };
         
-        let mut A = v0 + (v2 - v0).mul_num(alpha);
-        let mut B = if second_half { v1 + (v2 - v1).mul_num(beta) } else { v0 + (v1 - v0).mul_num(beta) };
+        let mut A = pts[0] + (pts[2] - pts[0]).mul_num(alpha);
+        let mut B = if second_half { pts[1] + (pts[2] - pts[1]).mul_num(beta) } else { pts[0] + (pts[1] - pts[0]).mul_num(beta) };
         
         if A.x > B.x { std::mem::swap(&mut A, &mut B); }
         for j in A.x..(B.x + 1) {
-            image.set(j, v0.y + i, color);
+            image.set(j, pts[0].y + i, color);
         }
     }
 }
 
 fn main() {
+    let width = 800;
+    let height = 800;
+    
+    let args: Vec<String> = std::env::args().collect();
+    
     let model = if args.len() == 1 { model::Model::open("obj/african_head.obj") }
                    else if args.len() == 2 { 
                        if args[1].find(".obj") != None { model::Model::open(&args[1]) } 
