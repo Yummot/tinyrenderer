@@ -25,7 +25,7 @@ fn solver(x: &&str, faces: &mut Vec<Vec<Vec3i>>, verts: &mut Vec<Vec3f>) {
         verts.push(Vec3f::new(x, y, z));
     } else if x.find("f ") != None {
         let face_info: Vec<&str> = x.split_whitespace().collect();
-        let mut face_vec = vec![Vec3i::new(0,0,0)];
+        let mut face_vec = vec![];
         
         for x in face_info {
             if x.find("f") != None { continue }
@@ -33,7 +33,6 @@ fn solver(x: &&str, faces: &mut Vec<Vec<Vec3i>>, verts: &mut Vec<Vec3f>) {
             let tmp = Vec3i::from_vec(&single);
             face_vec.push(tmp);
         }
-
         faces.push(face_vec);
     }
 }
