@@ -14,7 +14,7 @@ pub struct Model {
     diffusemap_: TGAImage,
 }
 
-fn solver(x: &&str, faces: &mut Vec<Vec<Vec3i>>, verts: &mut Vec<Vec3f>) {
+fn solver(x: &&str, faces: &mut Vec<Vec<Vec3i>>, verts: &mut Vec<Vec3f>, norms: &mut Vec<Vec3f>, uv: &mut Vec<Vec2f>) {
     if x.find("v ") != None {
         let vert: Vec<&str> = x.split_whitespace().collect();
 
@@ -34,6 +34,21 @@ fn solver(x: &&str, faces: &mut Vec<Vec<Vec3i>>, verts: &mut Vec<Vec3f>) {
             face_vec.push(tmp);
         }
         faces.push(face_vec);
+    } else if x.find("vn ") != None {
+        let vert: Vec<&str> = x.split_whitespace().collect();
+
+        let x = vert[1].trim().parse::<f32>().unwrap();
+        let y = vert[2].trim().parse::<f32>().unwrap();
+        let z = vert[3].trim().parse::<f32>().unwrap();
+        
+        norms.push(Vec3f::new(x,y,z));
+    } else if x.find("vt") != None {
+        let vert: Vec<&str> = x.split_whitespace().collect();
+
+        let x = vert[1].trim().parse::<f32>().unwrap();
+        let y = vert[2].trim().parse::<f32>().unwrap();
+        
+        uv.push(Vec2f::new(x,y));
     }
 }
 
@@ -56,14 +71,18 @@ impl Model {
 
         let mut faces_vec: Vec<Vec<Vec3i>> = vec![];
         let mut verts_vec: Vec<Vec3f> = vec![];
+        let mut norm_vec: Vec<Vec3f> = vec![];
+        let mut uv_vec: Vec<Vec2f> = vec![];
 
-        let _data: Vec<()> = data_without_comments.iter().map(|x| solver(x, &mut faces_vec, &mut verts_vec)).collect();
+        let _data: Vec<()> = data_without_comments.iter()
+            .map(|x| solver(x, &mut faces_vec, &mut verts_vec, &mut norm_vec, &mut uv_vec))
+            .collect();
 
         Model {
             verts_: verts_vec,
             faces_: faces_vec,
-            norms_: vec![],
-            uv_: vec![],
+            norms_: norm_vec,
+            uv_: uv_vec,
             diffusemap_: TGAImage::new(),
         }
     }
