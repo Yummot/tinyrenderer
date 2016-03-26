@@ -91,7 +91,7 @@ fn main() {
         let mut screen_coords = [Vec3i::new(0,0,0);3];
         let mut world_coords = [Vec3f::new(0,0,0);3];
         for j in 0..3 {
-            let v = model.vert(face[j] as usize);
+            let v = model.vert(face[j][0] as usize);
             screen_coords[j] = Vec3i::new((v.x+1.0)* width as f32 / 2.0, (v.y+1.0) * height as f32 / 2.0, (v.z + 1.0) * depth as f32 /2.0);
             world_coords[j]  = v;
         }

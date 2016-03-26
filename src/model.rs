@@ -14,7 +14,7 @@ pub struct Model {
     diffusemap_: TGAImage,
 }
 
-fn solver(x: &&str, faces: &mut Vec<Vec<i32>>, verts: &mut Vec<Vec3f>) {
+fn solver(x: &&str, faces: &mut Vec<Vec<Vec3i>>, verts: &mut Vec<Vec3f>) {
     if x.find("v ") != None {
         let vert: Vec<&str> = x.split_whitespace().collect();
 
@@ -24,11 +24,15 @@ fn solver(x: &&str, faces: &mut Vec<Vec<i32>>, verts: &mut Vec<Vec3f>) {
 
         verts.push(Vec3f::new(x, y, z));
     } else if x.find("f ") != None {
-        let tmp = x.replace("/", " ");
-        let face: Vec<&str> = tmp.split_whitespace().collect();
-        let mut face_vec = vec![];
-
+        let face_info: Vec<&str> = x.split_whitespace().collect();
+        let mut face_vec = vec![Vec3i::new(0,0,0)];
         
+        for x in face_info {
+            if x.find("f") != None { continue }
+            let single = x.split("/").map(|x| x.trim().parse::<i32>().unwrap() - 1).collect();
+            let tmp = Vec3i::from_vec(&single);
+            face_vec.push(tmp);
+        }
 
         faces.push(face_vec);
     }
@@ -51,7 +55,7 @@ impl Model {
             }
         }).collect();
 
-        let mut faces_vec: Vec<Vec<i32>> = vec![];
+        let mut faces_vec: Vec<Vec<Vec3i>> = vec![];
         let mut verts_vec: Vec<Vec3f> = vec![];
 
         let _data: Vec<()> = data_without_comments.iter().map(|x| solver(x, &mut faces_vec, &mut verts_vec)).collect();
@@ -59,6 +63,9 @@ impl Model {
         Model {
             verts_: verts_vec,
             faces_: faces_vec,
+            norms_: vec![],
+            uv_: vec![],
+            diffusemap_: TGAImage::new(),
         }
     }
     #[allow(dead_code)]
@@ -74,7 +81,7 @@ impl Model {
         self.verts_[idx]
     }
     #[allow(dead_code)]
-    pub fn face(&self, idx: usize) -> Vec<i32> {
+    pub fn face(&self, idx: usize) -> Vec<Vec3i> {
         self.faces_[idx].clone()
     }
 }

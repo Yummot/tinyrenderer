@@ -253,6 +253,22 @@ macro_rules! vec_impl_helper {
                         $($attr_name: num::cast::<N,T>($attr_name).unwrap(),)*
                     }
                 }
+                #[allow(dead_code)]
+                fn empty() -> $dst<T>
+                    where T: Num + NumCast + Copy {
+                    $dst {
+                        $($attr_name: num::cast::<u8,T>(0).unwrap(),)*
+                    }
+                }
+                #[allow(dead_code)]
+                pub fn from_vec<N>(v: & Vec<N>) -> $dst<T> 
+                    where N: Num + NumCast + Copy, T: Num + NumCast + Copy {
+                    let mut ret = $dst::empty();
+                    for i in 0..v.len() {
+                        ret[i] = num::cast::<N,T>(v[i]).unwrap();
+                    }
+                    ret
+                }
             }
 
         )*

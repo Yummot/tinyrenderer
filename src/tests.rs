@@ -45,16 +45,22 @@ mod test_model {
     #[test]
     //unuse
     fn test_new(){
-        let _model_face = Model::open("assets/african_head.obj");
+        let _model_face = Model::open("obj/african_head.obj");
         //println!("{:?}", model_face);
         //assert_eq!(false, true);
     }
     #[test]
     fn test_impl() {
-        let model_face = Model::open("assets/african_head.obj");
+        let model_face = Model::open("obj/african_head.obj");
         assert_eq!(model_face.nverts(), 1258);
         assert_eq!(model_face.nfaces(), 2492);
         assert_eq!(model_face.face(0), [23,24,25]);
         assert_eq!(model_face.vert(0), Vec3f::new(-0.000581696, -0.734665, -0.623267));
+    }
+    #[test]
+    fn try_split_whitespace() {
+        let patern = "f 24/1/24 25/2/25 26/3/26";
+        let res: Vec<&str> = patern.split_whitespace().collect();
+        assert_eq!(res,["f", "24/1/24", "25/2/25", "26/3/26"]);
     }
 }
