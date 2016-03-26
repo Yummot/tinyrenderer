@@ -34,49 +34,52 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
      }
 }
 
-fn barycentric(points: &[Vec2i], point: Vec2i) -> Vec3f {
-    let u = cross(Vec3f::new(points[2][0]-points[0][0], points[1][0]-points[0][0], points[0][0]-point[0]), Vec3f::new(points[2][1]-points[0][1], points[1][1]-points[0][1], points[0][1]-point[1])); 
-    if u[2].abs() < 1.0 { return Vec3f::new(-1.0,1.0,1.0); } // triangle is degenerate, in this case return smth with negative coordinates 
-    let ret = Vec3f::new(1.0 - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
-    return ret
-}
 
 #[allow(non_snake_case)]
-fn triangle(points: &[Vec2i], image: &mut TGAImage, color: TGAColor) {   
-    let mut bboxmin = Vec2i::new(image.get_width() - 1, image.get_height() - 1);
-    let mut bboxmax = Vec2i::new(0, 0);
-    let clamp = Vec2i::new(image.get_width() - 1, image.get_height() - 1);
+<<<<<<< HEAD
+=======
+fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, color: TGAColor, zbuffer: &mut [i32]) {   
+    if (pts[0].y == pts[1].y &&  pts[0].y == pts[1].y) && (pts[0].x == pts[1].x &&  pts[0].x == pts[2].x) { return }
+    if pts[0].y > pts[1].y { pts.swap(0,1); }
+    if pts[0].y > pts[2].y { pts.swap(0,2); }
+    if pts[1].y > pts[2].y { pts.swap(1,2); }   
     
-    for i in 0..3 {
-        for j in 0..2 {
-            bboxmin[j] = std::cmp::max(0, std::cmp::min(bboxmin[j], points[i][j]));
-            bboxmax[j] = std::cmp::min(clamp[j], std::cmp::max(bboxmax[j], points[i][j]));
-        }
-    }
-    
-    let mut p = Vec2i::new(bboxmin.x, bboxmin.y);
-    while p.x <= bboxmax.x {
-        p.y = bboxmin.y;
-        while p.y <= bboxmax.y {
-            let bc_screen = barycentric(points, p);
-            if bc_screen.x < 0.0 || bc_screen.y <0.0 || bc_screen.z < 0.0 { 
-                p.y += 1;
-                continue 
+    let total_height = pts[2].y -pts[0].y;
+    for i in 0..total_height {
+        let second_half = i > (pts[1].y - pts[0].y) || pts[1].y == pts[0].y;
+        let segment_height = if second_half { pts[2].y - pts[1].y } else { pts[1].y - pts[0].y } as f32;
+        let alpha = i as f32 / total_height as f32;
+        let beta = if second_half { (i - pts[1].y + pts[0].y) as f32 / segment_height }
+                   else { i as f32 / segment_height };
+        
+        let mut A = pts[0] + (pts[2] - pts[0]).mul_num(alpha);
+        let mut B = if second_half { pts[1] + (pts[2] - pts[1]).mul_num(beta) } else { pts[0] + (pts[1] - pts[0]).mul_num(beta) };
+        
+        if A.x > B.x { std::mem::swap(&mut A, &mut B); }
+        for j in A.x..(B.x + 1) {
+            let phi = if B.x == A.x { 1. }
+                      else { (j - A.x) as f32 / (B.x - A.x) as f32 };
+            let p = A + (B - A).mul_num(phi);
+            let idx = (j + (pts[0].y + i) * image.get_width()) as usize;
+            if zbuffer[idx] < p.z {
+                zbuffer[idx] = p.z;
+                image.set(j, pts[0].y + i, color);
             }
-            image.set(p.x, p.y, color);
-            p.y += 1;
+>>>>>>> lesson-3
         }
         p.x += 1;
     }
 }
 
 fn main() {
-    // let white = TGAColor::with_color(RGBAColor(255,255,255,255));
-    // let red = TGAColor::with_color(RGBAColor(255,0,0,255));
-    // let blue = TGAColor::with_color(RGBAColor(0,0,255,255));
+<<<<<<< HEAD
+
+    
+=======
     let width = 800;
     let height = 800;
-    
+    let depth = 255;
+>>>>>>> lesson-3
     let args: Vec<String> = std::env::args().collect();
     
     let model = if args.len() == 1 { model::Model::open("obj/african_head.obj") }
@@ -85,6 +88,7 @@ fn main() {
                        else { panic!("Error: Parameter: {} is not an obj file.", args[1]); }
                    }
                    else { panic!("Too many parameters input."); };
+<<<<<<< HEAD
     
     let mut image = TGAImage::with_info(width,height,RGB);
     
@@ -116,6 +120,35 @@ fn main() {
     // triangle(&t1, &mut image, red);
     // triangle(&t2, &mut image, blue);  `
     // triangle(&t, &mut image, TGAColor::with_color(RGBAColor(120,80,64,255)));
+=======
+    
+    let mut image = TGAImage::with_info(width,height,RGB);
+    
+    let mut zbuffer = vec![std::i32::MIN; width as usize * height as usize];
+    
+    let light_dir = Vec3f::new(0, 0, -1);
+    for i in 0..model.nfaces() {
+        let face = model.face(i);
+        let mut screen_coords = [Vec3i::new(0,0,0);3];
+        let mut world_coords = [Vec3f::new(0,0,0);3];
+        for j in 0..3 {
+            let v = model.vert(face[j] as usize);
+            screen_coords[j] = Vec3i::new((v.x+1.0)* width as f32 / 2.0, (v.y+1.0) * height as f32 / 2.0, (v.z + 1.0) * depth as f32 /2.0);
+            world_coords[j]  = v;
+        }
+        let mut n = cross((world_coords[2]-world_coords[0]),(world_coords[1]-world_coords[0]));
+        n = n.normalize();
+        let intensity = n * light_dir;
+        if intensity > 0.0 {
+            triangle(
+                &mut screen_coords, 
+                &mut image, 
+                TGAColor::with_color(RGBAColor((intensity * 255.0) as u8, (intensity * 255.0) as u8, (intensity * 255.0) as u8, 255)),
+                &mut zbuffer
+                );
+        }
+    }
+>>>>>>> lesson-3
     
     image.flip_vertically().unwrap();
     image.write_tga_file("lesson2_output.tga", tga_image::WRITE_RLE_FILE).unwrap();

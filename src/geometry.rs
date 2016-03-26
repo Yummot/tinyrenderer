@@ -297,65 +297,10 @@ norm_helper!(
     Vec3 > (x y z);
 );
 
+
+
 pub type Vec2f = Vec2<f32>;
 pub type Vec2i = Vec2<i32>;
 pub type Vec3f = Vec3<f32>;
 pub type Vec3i = Vec3<i32>;
 
-
-// #[derive(Debug, Copy, Clone)]
-// pub struct Vec2f {
-// x: f32,
-// y: f32,
-// }
-//
-// #[derive(Debug, Copy, Clone)]
-// pub struct Vec2i {
-// x: i32,
-// y: i32,
-// }
-//
-// #[derive(Debug, Copy, Clone)]
-// pub struct Vec3f {
-// x: f32,
-// y: f32,
-// z: f32,
-// }
-//
-// #[derive(Debug, Copy, Clone)]
-// pub struct Vec3i {
-// x: i32,
-// y: i32,
-// z: i32,
-// }
-//
-
-
-
-// macro_rules! norm_helper {
-// ($($dst: ident ( $($attr_name : ident)*);)*) => (
-// $(
-// impl Norm for $dst {
-// type Output = f64;
-// type Normalize = Self;
-// #[allow(dead_code)]
-// fn norm(&self) -> f64 {
-// (sum!($(self.$attr_name * self.$attr_name),*) as f64).sqrt()
-// }
-// fn normalize(&self) -> $dst {
-// let mut ret = *self;
-// ret = ret.mul_num(1.0 / self.norm());
-// ret
-// }
-// }
-// )*
-// );
-// }
-//
-// norm_helper!(
-// Vec2f (x y);
-// Vec2i (x y);
-// Vec3f (x y z);
-// Vec3i (x y z);
-// );
-//
