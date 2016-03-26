@@ -3,11 +3,15 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use geometry::*;
+use tga_image::*;
 
 #[derive(Debug,Clone)]
 pub struct Model {
     verts_: Vec<Vec3f>,
-    faces_: Vec<Vec<i32>>,
+    faces_: Vec<Vec<Vec3i>>,
+    norms_: Vec<Vec3f>,
+    uv_: Vec<Vec2f>,
+    diffusemap_: TGAImage,
 }
 
 fn solver(x: &&str, faces: &mut Vec<Vec<i32>>, verts: &mut Vec<Vec3f>) {
@@ -24,13 +28,7 @@ fn solver(x: &&str, faces: &mut Vec<Vec<i32>>, verts: &mut Vec<Vec3f>) {
         let face: Vec<&str> = tmp.split_whitespace().collect();
         let mut face_vec = vec![];
 
-        for i in 0..face.len() {
-            if i == 1 || i == 4 || i == 7 {
-                //println!("face{:?}", face);
-                let get = face[i].trim().parse::<i32>().unwrap() - 1;
-                face_vec.push(get);
-            }
-        }
+        
 
         faces.push(face_vec);
     }
