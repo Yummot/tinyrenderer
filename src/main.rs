@@ -35,7 +35,7 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
 }
 
 #[allow(non_snake_case)]
-fn triangle(mut v0: Vec2i, mut v1: Vec2i, mut v2: Vec2i, image: &mut TGAImage, color: TGAColor) {   
+fn triangle(v0: &mut [Vec3i], image: &mut TGAImage, color: TGAColor) {   
     if (v0.y == v1.y &&  v0.y == v2.y) && (v0.x == v1.x &&  v0.x == v2.x) { return }
     if v0.y > v1.y { std::mem::swap(&mut v0, &mut v1); }
     if v0.y > v2.y { std::mem::swap(&mut v0, &mut v2); }
