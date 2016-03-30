@@ -269,6 +269,24 @@ macro_rules! vec_impl_helper {
                     }
                     ret
                 }
+                #[allow(dead_code)]
+                pub fn to_other<N>(v: &$dst<T>) -> $dst<N>
+                   where N: Num + NumCast + Copy, T: Num + NumCast + Copy {
+                    $dst {
+                        $($attr_name: num::cast::<T,N>(v.$attr_name).unwrap(),)*
+                    }       
+                }
+                
+                #[allow(dead_code)]
+                pub fn check_add<N>(&self, rhs: &$dst<N>) -> Self
+                   where N: Num + NumCast + Copy, T: Num + NumCast + Copy {
+                    $dst {
+                        $(
+                            $attr_name: num::cast::<f64, T>(
+                                num::cast::<T,f64>(self.$attr_name).unwrap() + num::cast::<N, f64>(rhs.$attr_name).unwrap()).unwrap(),
+                        )*
+                    }       
+                }
             }
 
         )*
@@ -320,3 +338,17 @@ pub type Vec2i = Vec2<i32>;
 pub type Vec3f = Vec3<f32>;
 pub type Vec3i = Vec3<i32>;
 
+impl Vec3i {
+    // const Vec3<float> &v) : 
+    // x(int(v.x+.5)), 
+    // y(int(v.y+.5)), 
+    // z(int(v.z+.5)
+    #[allow(dead_code)]
+    pub fn to_vec3f(src: &Self) -> Vec3f {
+        let mut ret = Vec3f::empty();
+        ret.x = src.x as f32 + 0.5;
+        ret.y = src.y as f32 + 0.5;
+        ret.z = src.z as f32 + 0.5;
+        ret
+    }
+}

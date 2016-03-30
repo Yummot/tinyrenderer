@@ -8,7 +8,7 @@ use tga_image::*;
 #[derive(Debug,Clone)]
 pub struct Model {
     verts_: Vec<Vec3f>,
-    faces_: Vec<Vec<Vec3i>>,
+    faces_: Vec<Vec<Vec3i>>, // this Vec3i means vertex/uv/normal
     norms_: Vec<Vec3f>,
     uv_: Vec<Vec2f>,
     diffusemap_: TGAImage,
@@ -112,8 +112,10 @@ impl Model {
         self.verts_[idx]
     }
     #[allow(dead_code)]
-    pub fn face(&self, idx: usize) -> Vec<Vec3i> {
-        self.faces_[idx].clone()
+    pub fn face(&self, idx: usize) -> Vec<i32> {
+        let mut ret = vec![];
+        for i in 0..self.faces_[idx].len() { ret.push(self.faces_[idx][i][0]); }
+        ret
     }
     #[allow(dead_code)]
     pub fn diffuse(&self, uv: Vec2i) -> TGAColor {

@@ -37,10 +37,10 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
 
 #[allow(non_snake_case)]
 fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &mut [Vec2i], intensity: f32, zbuffer: &mut [i32]) {   
-    if (pts[0].y == pts[1].y &&  pts[0].y == pts[1].y) && (pts[0].x == pts[1].x &&  pts[0].x == pts[2].x) { return }
-    if pts[0].y > pts[1].y { pts.swap(0,1); }
-    if pts[0].y > pts[2].y { pts.swap(0,2); }
-    if pts[1].y > pts[2].y { pts.swap(1,2); }   
+    if (pts[0].y == pts[1].y &&  pts[0].y == pts[2].y) && (pts[0].x == pts[1].x &&  pts[0].x == pts[2].x) { return }
+    if pts[0].y > pts[1].y { pts.swap(0,1); uv.swap(0,1); }
+    if pts[0].y > pts[2].y { pts.swap(0,2); uv.swap(0,2); }
+    if pts[1].y > pts[2].y { pts.swap(1,2); uv.swap(1,2); }   
     
     let total_height = pts[2].y -pts[0].y;
     for i in 0..total_height {
@@ -50,8 +50,12 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &
         let beta = if second_half { (i - pts[1].y + pts[0].y) as f32 / segment_height }
                    else { i as f32 / segment_height };
         
-        let mut A = pts[0] + (pts[2] - pts[0]).mul_num(alpha);
-        let mut B = if second_half { pts[1] + (pts[2] - pts[1]).mul_num(beta) } else { pts[0] + (pts[1] - pts[0]).mul_num(beta) };
+        let mut A = pts[0].check_add(&Vec3i::to_vec3f(&(pts[2] - pts[0])).mul_num(alpha));
+        let mut B = if second_half { 
+            pts[1].check_add(&Vec3i::to_vec3f(&(pts[2] - pts[1])).mul_num(beta)) 
+            } else { 
+                pts[0].check_add(&Vec3i::to_vec3f(&(pts[1] - pts[0])).mul_num(beta)) 
+            };
         let mut uvA = uv[0] + (uv[2] - uv[0]).mul_num(alpha);
         let mut uvB = if second_half { uv[1] + (uv[2] - uv[1]).mul_num(beta) } else { uv[0] + (uv[1] - uv[0]).mul_num(beta) };
         
@@ -62,13 +66,14 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &
         for j in A.x..(B.x + 1) {
             let phi = if B.x == A.x { 1. }
                       else { (j - A.x) as f32 / (B.x - A.x) as f32 };
-            let p = A + (B - A).mul_num(phi);
+            let p = Vec3::to_other::<i32>(&(Vec3::to_other::<f32>(&A) + Vec3::to_other::<f32>(&(B - A)).mul_num(phi)));
             let uvp = uvA + (uvB - uvA).mul_num(phi);
             let idx = (p.x + p.y * image.get_width()) as usize;
             if zbuffer[idx] < p.z {
                 zbuffer[idx] = p.z;
                 let color = model.diffuse(uvp);
-                image.set(j, pts[0].y + i, 
+                // println!("({},{})", p.x, p.y);
+                image.set(p.x, p.y, 
                     TGAColor::with_color(
                         RGBAColor(
                             (color.r as f32 * intensity) as u8, 
@@ -95,7 +100,6 @@ fn main() {
     
 
     let mut image = TGAImage::with_info(width,height,RGB);
-    
     let mut zbuffer = vec![std::i32::MIN; width as usize * height as usize];
     
     let light_dir = Vec3f::new(0, 0, -1);
@@ -104,7 +108,7 @@ fn main() {
         let mut screen_coords = [Vec3i::new(0,0,0);3];
         let mut world_coords = [Vec3f::new(0,0,0);3];
         for j in 0..3 {
-            let v = model.vert(face[j][0] as usize);
+            let v = model.vert(face[j] as usize);
             screen_coords[j] = Vec3i::new((v.x+1.0)* width as f32 / 2.0, (v.y+1.0) * height as f32 / 2.0, (v.z + 1.0) * depth as f32 /2.0);
             world_coords[j]  = v;
         }

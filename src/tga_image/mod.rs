@@ -298,8 +298,15 @@ impl TGAImage {
             };
         } else if 10 == tga_header.datatypecode || 11 == tga_header.datatypecode {
             self.load_rle_data(&mut file);
+        } else { panic!("Unkown file format {}", tga_header.datatypecode); }
+        if (tga_header.imagedescriptor & 0x20) == 0 {
+            println!("fv");
+            self.flip_vertically().unwrap();
         }
-        // TODO Confirm flip_horizontally and flip_vertically
+        if (tga_header.imagedescriptor & 0x10) != 0 {
+            println!("fh");
+            self.flip_horizontally().unwrap();
+        }
     }
 
     #[allow(dead_code)]
@@ -307,7 +314,7 @@ impl TGAImage {
         let pixelcount = self.width as usize * self.height as usize;
         let mut currentpixel = 0;
         let mut currentbyte = 0;
-        let mut colorbuffer = TGAColor::new();
+        // let mut colorbuffer = TGAColor::new();
         let mut chunkheader = [0u8];
 
         loop {
@@ -318,11 +325,10 @@ impl TGAImage {
                     let mut cache = vec![0u8;self.bytespp as usize];
                     file.read(&mut cache).unwrap(); // TODO remove unwrap and refactor
 
-                    colorbuffer.set(&cache[0..], self.bytespp as usize);
-                    let raw = colorbuffer.raw();
-                    let a = true;
+                    // colorbuffer.set(&cache[0..], self.bytespp as usize);
+                    // let raw = colorbuffer.raw();
                     for t in 0..self.bytespp as usize {
-                        self.data[currentbyte] = raw[t];
+                        self.data[currentbyte] = cache[t];
                         currentbyte += 1;
                     }
                     currentpixel += 1;
@@ -335,12 +341,11 @@ impl TGAImage {
                 let mut cache = vec![0u8;self.bytespp as usize];
                 file.read(&mut cache).unwrap(); // TODO remove unwrap and refactor
 
-                colorbuffer.set(&cache[0..], self.bytespp as usize);
-                let raw = colorbuffer.raw();
-                let a = true;
+                // colorbuffer.set(&cache[0..], self.bytespp as usize);
+                // let raw = colorbuffer.raw();
                 for _ in 0..chunkheader[0] {
                     for t in 0..self.bytespp as usize {
-                        self.data[currentbyte] = raw[t];
+                        self.data[currentbyte] = cache[t];
                         currentbyte += 1;
                     }
                     currentpixel += 1;
@@ -353,7 +358,7 @@ impl TGAImage {
                 break;
             }
         }
-
+        // println!("{}, {}", currentpixel, pixelcount);
         Some(pixelcount)
     }
 
