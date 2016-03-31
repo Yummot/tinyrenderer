@@ -7,10 +7,6 @@ mod tga_image;
 use tga_image::*;
 use geometry::*;
 
-//static WHITE: TGAColor = TGAColor { bytespp: 3, r: 255, g: 255, b: 255, a: 255 };
-// const RED: TGAColor = TGAColor { bytespp: 3, r: 255, g: 0, b: 0, a: 255 };
-// const GREEN: TGAColor = TGAColor { bytespp: 3, r: 0, g: 255, b: 0, a: 255 };
-//const BLUE: TGAColor = TGAColor { bytespp: 3, r: 0, g: 0, b: 255, a: 255 };
 
 #[allow(dead_code)]
 fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
@@ -34,6 +30,9 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
      }
 }
 
+fn mat_to_vec3f(m: &Mat) -> Vec3f {
+    Vec3f::new(m[0][0] / m[3][0], m[1][0] / m[3][0], m[2][0] / m[3][0])
+}
 
 #[allow(non_snake_case)]
 fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &mut [Vec2i], intensity: f32, zbuffer: &mut [i32]) {   

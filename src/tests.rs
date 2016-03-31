@@ -64,3 +64,40 @@ mod test_model {
         assert_eq!(res,["f", "24/1/24", "25/2/25", "26/3/26"]);
     }
 }
+
+#[cfg(test)]
+mod test_mat {
+    use super::super::geometry::*;
+    #[test]
+    fn test_mul() {
+        let mut mat_1 = Mat::new(3, 4);
+        let mut mat_2 = Mat::new(4, 3);
+        mat_1[0][0] = 1.0;
+        mat_2[0][0] = 1.0;
+        let res = &mat_1 * &mat_2;
+        assert!(res[0][0] == 1.0);
+    }
+    #[test]
+    fn test_builder() {
+        let mat = Mat::builder(&[&[1,2,3],&[4,5,6],&[7,8,9]]).unwrap();
+        assert_eq!(format!("{:?}", mat), "Mat { data: [[1, 2, 3], [4, 5, 6], [7, 8, 9]], rows: 3, cols: 3 }");
+    }
+    #[test]
+    fn test_transpose() {
+        let mut mat_1 = Mat::new(3, 4);
+        mat_1[1][0] = 1.0;
+        let res = mat_1.transpose();
+        assert!(res[0][1] == 1.0);
+    }
+    #[test]
+    fn test_display() {
+        let mat = Mat::builder(&[&[1,2,3],&[4,5,6],&[7,8,9]]).unwrap();
+        assert_eq!(format!("{}", mat), "[[1, 2, 3]\n [4, 5, 6]\n [7, 8, 9]]\n");    
+    }
+    #[test]
+    fn test_inverse() {
+        let mat = Mat::builder(&[&[1,0,1],&[0,1,0],&[1,0,0]]).unwrap();
+        let inv_mat = mat.inverse();
+        assert_eq!(format!("{}",inv_mat), "[[0, 0, 1]\n [0, 1, 0]\n [1, 0, -1]]\n");
+    }
+}

@@ -1,3 +1,4 @@
+pub use super::std;
 pub use super::std::ops::*;
 pub use super::std::cmp::PartialEq;
 extern crate num;
@@ -350,5 +351,173 @@ impl Vec3i {
         ret.y = src.y as f32 + 0.5;
         ret.z = src.z as f32 + 0.5;
         ret
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Mat {
+    data: Vec<Vec<f32>>,
+    rows: u32, 
+    cols: u32,
+}
+
+
+const DEFAULT_ALLOC: u32 = 4;
+
+impl Mat {
+    #[allow(dead_code)]
+    pub fn new(r: u32, c: u32) -> Mat {
+        Mat {
+            data: vec![vec![0.0;c as usize];r as usize],
+            rows: r,
+            cols: c,
+        }
+    }
+    #[allow(dead_code)]
+    pub fn builder<T>(data: &[&[T]]) -> Result<Mat,&'static str>
+       where T: Num + NumCast + Copy {
+        let checker = data[0].len();
+        let c = data[0].len();
+        let mut ret = Mat::new(data.len() as u32, c as u32);
+        for i in 0..data.len() {
+            if checker != data[i].len() { return Err("Mat::builder: Wrong input data.") } 
+            for j in 0..c {
+                ret[i][j] = cast::<T,f32>(data[i][j]).unwrap();
+            }
+        }
+        
+        return Ok(ret)
+    }
+}
+
+impl std::default::Default for Mat {
+    fn default() -> Self {
+        Mat {
+            data: vec![vec![0.0;DEFAULT_ALLOC as usize];DEFAULT_ALLOC as usize],
+            rows: DEFAULT_ALLOC,
+            cols: DEFAULT_ALLOC,
+        }
+    }
+}
+
+impl std::ops::Index<usize> for Mat {
+    type Output = Vec<f32>;
+    fn index<'a>(&'a self, idx: usize) -> &'a Vec<f32> {
+        &self.data[idx]
+    }
+}
+
+impl std::ops::IndexMut<usize> for Mat {
+    fn index_mut<'a>(&'a mut self, idx: usize) -> &'a mut Vec<f32> {
+        &mut self.data[idx]
+    }
+}
+
+impl<'a> std::ops::Mul for &'a Mat {
+    type Output = Mat;
+    fn mul(self, rhs: &'a Mat) -> Mat {
+        if self.cols != rhs.rows { panic!("Mat::mul: Lhs.cols != Rhs.rows."); }
+        let mut res = Mat::new(self.rows, rhs.cols);
+        //TODO loop unrolling
+        for i in 0..self.rows as usize {
+            for j in 0..rhs.cols as  usize {
+                for k in 0..self.cols as usize {
+                    res[i][j] += self[i][k] * rhs[k][j];
+                }
+            }
+        }
+        
+        res
+    }
+}
+
+impl Mat {
+    #[allow(dead_code)]
+    pub fn nrows(&self) -> u32 { self.rows }    
+    #[allow(dead_code)]
+    pub fn ncols(&self) -> u32 { self.cols }
+    #[allow(dead_code)]
+    pub fn identify(dimesions: u32) -> Mat {
+        let mut ret = Mat::new(dimesions, dimesions);
+        for i in 0..dimesions as usize {
+            ret[i][i] = 1.0;
+        }
+        ret
+    }
+    #[allow(dead_code)]
+    pub fn transpose(&self) -> Mat {
+        let mut ret = Mat::new(self.cols, self.rows);
+        for i in 0..self.rows as usize {
+            for j in 0..self.cols as usize {
+                ret[j][i] = self[i][j];
+            }
+        }
+        ret 
+    }
+    #[allow(dead_code)]
+    pub fn inverse(&self) -> Mat {
+        if self.rows != self.cols { panic!("Mat::inverse not a square Matrix"); }
+        // augmenting the square matrix with the identity matrix of the same dimensions A => [AI]
+        let mut res = Mat::new(self.rows, self.cols * 2);
+        for i in 0..self.rows as usize {
+            for j in 0..self.cols as usize {
+                res[i][j] = self[i][j];
+            }
+        }
+        for i in 0..self.rows as usize {
+            res[i][i + self.cols as usize] = 1.0;
+        }
+        // first pass
+        for i in 0..(self.rows - 1) as usize {
+            // normalize the first row
+            for j in (0..res.cols as usize).rev() {
+                res[i][j] /= res[i][i];
+            }
+            for k in i+1..self.rows as usize {
+                let coeff = res[k][i];
+                for j in 0..res.cols as usize {
+                    res[k][j] -= res[i][j] * coeff;
+                }
+            }
+        }
+        // normalize the last row
+        for j in (0..res.cols as usize).rev() {
+            res[self.rows as usize - 1][j] /= res[self.rows as usize - 1][self.rows as usize - 1];
+        }
+        // second pass
+        for i in (0..self.rows as usize).rev() {
+            for k in (0..i).rev() {
+                let coeff = res[k][i];
+                for j in 0..res.cols as usize {
+                    res[k][j] -= res[i][j] * coeff;    
+                }
+            }
+        }
+        // cut the identity matrix back
+        let mut truncate = Mat::new(self.rows, self.cols);
+        for i in 0..self.rows as usize {
+            for j in 0..self.cols as usize {
+                truncate[i][j] = res[i][j + self.cols as usize];
+            }
+        }
+
+        return truncate;
+    }
+}
+
+
+impl std::fmt::Display for Mat {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        try!(write!(f, "["));
+        for i in 0..self.rows as usize {
+            if i == 0 { try!(write!(f,"[")); }
+            else { try!(write!(f,"\n [")); }
+            for j in 0..self.cols as usize - 1 {
+                try!(write!(f,"{}, ",self[i][j]));
+            }
+            try!(write!(f,"{}",self[i][self.cols as usize - 1]));
+            try!(write!(f,"]"));            
+        }
+        write!(f, "]\n")
     }
 }
