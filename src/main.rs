@@ -111,14 +111,14 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &
         let beta = if second_half { (i - pts[1].y + pts[0].y) as f32 / segment_height }
                    else { i as f32 / segment_height };
         
-        let mut A = pts[0].check_add(&Vec3i::to_vec3f(&(pts[2] - pts[0])) * alpha);
+        let mut A = pts[0].check_add(&(Vec3i::to_vec3f(&(pts[2] - pts[0])) * alpha));
         let mut B = if second_half { 
-            pts[1].check_add(&Vec3i::to_vec3f(&(pts[2] - pts[1])).mul_num(beta)) 
+            pts[1].check_add(&(Vec3i::to_vec3f(&(pts[2] - pts[1])) * beta)) 
             } else { 
-                pts[0].check_add(&Vec3i::to_vec3f(&(pts[1] - pts[0])).mul_num(beta)) 
+                pts[0].check_add(&(Vec3i::to_vec3f(&(pts[1] - pts[0])) * beta)) 
             };
-        let mut uvA = uv[0] + (uv[2] - uv[0]).mul_num(alpha);
-        let mut uvB = if second_half { uv[1] + (uv[2] - uv[1]).mul_num(beta) } else { uv[0] + (uv[1] - uv[0]).mul_num(beta) };
+        let mut uvA = uv[0] + (uv[2] - uv[0]) * alpha;
+        let mut uvB = if second_half { uv[1] + (uv[2] - uv[1]) * beta } else { uv[0] + (uv[1] - uv[0]) * beta };
         
         if A.x > B.x { 
             std::mem::swap(&mut A, &mut B); 
@@ -127,8 +127,8 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &
         for j in A.x..(B.x + 1) {
             let phi = if B.x == A.x { 1. }
                       else { (j - A.x) as f32 / (B.x - A.x) as f32 };
-            let p = Vec3::to_other::<i32>(&(Vec3::to_other::<f32>(&A) + Vec3::to_other::<f32>(&(B - A)).mul_num(phi)));
-            let uvp = uvA + (uvB - uvA).mul_num(phi);
+            let p = Vec3::to_other::<i32>(&(Vec3::to_other::<f32>(&A) + Vec3::to_other::<f32>(&(((B - A)) * phi))));
+            let uvp = uvA + (uvB - uvA) *phi;
             let idx = (p.x + p.y * image.get_width()) as usize;
             if zbuffer[idx] < p.z {
                 zbuffer[idx] = p.z;
@@ -170,11 +170,11 @@ fn main() {
     let vp = viewport(width as u32 / 4, width as u32 / 4, width as u32 / 2, height as u32 / 2, depth);
     
     {
-        // let x = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(1.0, 0.0, 0.0)))));
-        // let y = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(0.0, 1.0, 0.0)))));
-        // let o = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(0.0, 0.0, 0.0)))));
-        // line(o, x, &mut image, red);
-        // line(o, y, &mut image, green);
+        let x = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(1.0, 0.0, 0.0)))));
+        let y = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(0.0, 1.0, 0.0)))));
+        let o = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(0.0, 0.0, 0.0)))));
+        line(o, x, &mut image, red);
+        line(o, y, &mut image, green);
     }
     
 
@@ -183,15 +183,15 @@ fn main() {
         let wp0 = model.vert(face[j] as usize);
         let wp1 = model.vert(face[(j + 1) % face.len()] as usize);
         {
-            // let sp0 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(wp0))));    
-            // let sp1 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(wp1))));
-            // line(sp0, sp1, &mut image, white);
+            let sp0 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(wp0))));    
+            let sp1 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(wp1))));
+            line(sp0, sp1, &mut image, white);
         }
         {
             let t = zoom(1.5);
-            // let sp0 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&(&vp * &t) * &vec3f_to_mat(wp0))));    
-            // let sp1 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&(&vp * &t) * &vec3f_to_mat(wp1))));
-            // line(sp0, sp1, &mut image, yellow);
+            let sp0 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&(&vp * &t) * &vec3f_to_mat(wp0))));    
+            let sp1 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&(&vp * &t) * &vec3f_to_mat(wp1))));
+            line(sp0, sp1, &mut image, yellow);
         }
     }
         

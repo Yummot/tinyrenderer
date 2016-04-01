@@ -208,12 +208,12 @@ macro_rules! vec_impl_helper {
     ($($dst : ident > ( $($attr_name : ident)*) ;)*) => (
         $(
             impl<T> Mul<$dst<T>> for $dst<T>
-                where T: Clone + Mul<Output = T> + Add<Output = T>
+                where T: Clone + Mul<Output = T> + Add<Output = T> + Num
             {
                 type Output = T;
                 #[allow(dead_code)]
                 fn mul(self, rhs: Self) -> T {
-                    sum!($(self.$attr_name * rhs.$attr_name),*) as T
+                    sum!($(self.$attr_name * rhs.$attr_name),*) 
                 }
             }
 
@@ -266,7 +266,7 @@ macro_rules! vec_impl_helper {
             }
             
             impl<T> Sub for $dst<T>
-                where T: Clone + Sub<Output = T>
+                where T: Num + Clone + Sub<Output = T>
             {
                 type Output = $dst<T>;
                 #[allow(dead_code)]
@@ -280,7 +280,7 @@ macro_rules! vec_impl_helper {
             }
 
             impl<T> Add for $dst<T>
-                where T: Clone + Add<Output = T>
+                where T: Num + Clone + Add<Output = T>
             {
                 type Output = $dst<T>;
                 #[allow(dead_code)]
@@ -305,9 +305,8 @@ macro_rules! vec_impl_helper {
                 }
             }
 
-            impl<T> $dst<T>
-                where T: Mul<Output = T> + Clone + Copy + Zero + NumCast
-            {
+            impl<T> $dst<T> 
+               where T: Num + NumCast + Copy {
                 // #[allow(dead_code)]
                 // pub fn mul_num<N>(&self, rhs: N) -> $dst<T>
                 //     where N: NumCast + Zero + Copy {
@@ -319,21 +318,20 @@ macro_rules! vec_impl_helper {
                 // }
                 #[allow(dead_code)]
                 pub fn new<N>($($attr_name : N),*) -> $dst<T>
-                    where N: Num + NumCast + Copy, T: Num + NumCast + Copy {
+                    where N: Num + NumCast + Copy{
                     $dst {
                         $($attr_name: num::cast::<N,T>($attr_name).unwrap(),)*
                     }
                 }
                 #[allow(dead_code)]
-                fn empty() -> $dst<T>
-                    where T: Num + NumCast + Copy {
+                fn empty() -> $dst<T> {
                     $dst {
                         $($attr_name: num::cast::<u8,T>(0).unwrap(),)*
                     }
                 }
                 #[allow(dead_code)]
                 pub fn from_vec<N>(v: & Vec<N>) -> $dst<T> 
-                    where N: Num + NumCast + Copy, T: Num + NumCast + Copy {
+                    where N: Num + NumCast + Copy {
                     let mut ret = $dst::empty();
                     for i in 0..v.len() {
                         ret[i] = num::cast::<N,T>(v[i]).unwrap();
@@ -342,11 +340,20 @@ macro_rules! vec_impl_helper {
                 }
                 #[allow(dead_code)]
                 pub fn to_other<N>(v: &$dst<T>) -> $dst<N>
-                   where N: Num + NumCast + Copy, T: Num + NumCast + Copy {
+                   where N: Num + NumCast + Copy {
                     $dst {
                         $($attr_name: num::cast::<T,N>(v.$attr_name).unwrap(),)*
                     }       
                 }
+                // #[allow(dead_code)]
+                // pub fn mul_num<N>(&self, rhs: N) -> $dst<T>
+                //     where N: NumCast + Copy {
+                //     $dst {
+                //         $(
+                //             $attr_name: num::cast::<f64,T>(num::cast::<T,f64>(self.$attr_name).unwrap() * num::cast::<N,f64>(rhs).unwrap()).unwrap(),
+                //         )*
+                //     }
+                // }
                 
                 #[allow(dead_code)]
                 pub fn check_add<N>(&self, rhs: &$dst<N>) -> Self
@@ -369,7 +376,7 @@ macro_rules! norm_helper {
     ($($dst: ident > ( $($attr_name : ident)*);)*) => (
         $(
             impl<T> Norm for $dst<T>
-                where T: Clone + Copy + Mul<Output = T> + Add<Output = T> + NumCast
+                where T: Clone + Copy + Mul<Output = T> + Add<Output = T> + NumCast + Num
             {
                 type Output = f64;
                 type Normalize = Self;
@@ -378,7 +385,7 @@ macro_rules! norm_helper {
                     (num::cast::<T,f64>(sum!($(self.$attr_name * self.$attr_name),*)).unwrap()).sqrt()
                 }
                 #[allow(dead_code)]
-                fn normalize(&self) -> $dst<T> {
+                fn normalize(&self) -> Self {
                     let mut ret = *self;
                     ret = ret * (1.0 / self.norm());
                     ret
