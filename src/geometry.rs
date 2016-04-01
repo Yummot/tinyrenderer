@@ -317,6 +317,7 @@ macro_rules! norm_helper {
     );
 }
 
+#[allow(dead_code)]
 pub fn cross<T>(v1: Vec3<T>, v2: Vec3<T>) -> Vec3<T> 
     where T: Num + NumCast + Copy + Mul<Output=T> + Sub<Output=T> {
     return Vec3::new(v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x);
@@ -437,7 +438,7 @@ impl Mat {
     #[allow(dead_code)]
     pub fn ncols(&self) -> u32 { self.cols }
     #[allow(dead_code)]
-    pub fn identify(dimesions: u32) -> Mat {
+    pub fn identity(dimesions: u32) -> Mat {
         let mut ret = Mat::new(dimesions, dimesions);
         for i in 0..dimesions as usize {
             ret[i][i] = 1.0;
@@ -521,3 +522,4 @@ impl std::fmt::Display for Mat {
         write!(f, "]\n")
     }
 }
+

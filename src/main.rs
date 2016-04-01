@@ -9,7 +9,7 @@ use geometry::*;
 
 
 #[allow(dead_code)]
-fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
+fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: TGAColor) {
      let mut steep = false;
      if (p0.x - p1.x).abs() < (p0.y - p1.y).abs() {
          std::mem::swap(&mut p0.x, &mut p0.y);
@@ -21,7 +21,7 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
      }
      for x in p0.x..p1.x {
          let t = (x as f32 - p0.x as f32) / (p1.x as f32 - p0.x as f32);
-         let y = p0.y as f32 * (1.0 - t) + p1.y as f32 * t;
+         let y = p0.y as f32 * (1.0 - t) + p1.y as f32 * t + 0.5;
          if steep {
              image.set(y, x, color);
          } else {
@@ -30,11 +30,73 @@ fn line(mut p0: Vec2i, mut p1: Vec2i, image: &mut TGAImage, color: TGAColor) {
      }
 }
 
+#[allow(dead_code)]
 fn mat_to_vec3f(m: &Mat) -> Vec3f {
     Vec3f::new(m[0][0] / m[3][0], m[1][0] / m[3][0], m[2][0] / m[3][0])
 }
+#[allow(dead_code)]
+fn vec3f_to_mat(v: Vec3f) -> Mat {
+    Mat::builder(&[&[v.x],&[v.y],&[v.z],&[1.0]]).unwrap()
+}
+#[allow(dead_code)]
+fn viewport(x: u32, y: u32, w: u32, h: u32, depth: u32) -> Mat {
+    let mut ret = Mat::identity(4);
+    ret[0][3] = x as f32 + w as f32 / 2.0;
+    ret[1][3] = y as f32 + h as f32 / 2.0;
+    ret[2][3] = depth as f32 / 2.0;
+
+    ret[0][0] = w as f32 / 2.0;
+    ret[1][1] = h as f32 / 2.0;
+    ret[2][2] = depth as f32 / 2.0; 
+    
+    ret
+}
+#[allow(dead_code)]
+fn translation(v: Vec3f) -> Mat {
+    let mut ret = Mat::identity(4);
+    ret[0][3] = v.x;
+    ret[1][3] = v.y;
+    ret[2][3] = v.z;
+    ret
+}
+#[allow(dead_code)]
+fn zoom(factor: f32) -> Mat {
+    let mut z = Mat::identity(4);
+    z[0][0] = factor;
+    z[1][1] = factor;
+    z[2][2] = factor;
+    z
+}
+#[allow(dead_code)]
+fn rotation_x(cosangle: f32, sinangle: f32) -> Mat {
+    let mut r = Mat::identity(4);
+    r[1][1] = cosangle;
+    r[2][2] = cosangle;
+    r[1][2] = -sinangle;
+    r[2][1] =  sinangle;
+    r
+}
+#[allow(dead_code)]
+fn rotation_y(cosangle: f32, sinangle: f32) -> Mat {
+    let mut r = Mat::identity(4);
+    r[0][0] = cosangle;
+    r[2][2] = cosangle;
+    r[0][2] =  sinangle;
+    r[2][0] = -sinangle;
+    r
+}
+#[allow(dead_code)]
+fn rotation_z(cosangle: f32, sinangle: f32) -> Mat {
+    let mut r = Mat::identity(4);
+    r[0][0] = cosangle;
+    r[1][1] = cosangle;
+    r[0][1] = -sinangle;
+    r[1][0] =  sinangle;
+    r
+}
 
 #[allow(non_snake_case)]
+#[allow(dead_code)]
 fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &mut [Vec2i], intensity: f32, zbuffer: &mut [i32]) {   
     if (pts[0].y == pts[1].y &&  pts[0].y == pts[2].y) && (pts[0].x == pts[1].x &&  pts[0].x == pts[2].x) { return }
     if pts[0].y > pts[1].y { pts.swap(0,1); uv.swap(0,1); }
@@ -71,7 +133,7 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &
             if zbuffer[idx] < p.z {
                 zbuffer[idx] = p.z;
                 let color = model.diffuse(uvp);
-                // println!("({},{})", p.x, p.y);
+
                 image.set(p.x, p.y, 
                     TGAColor::with_color(
                         RGBAColor(
@@ -84,51 +146,55 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &
     }
 }
 
+#[allow(unused_variables)]
 fn main() {
     let width = 800;
     let height = 800;
     let depth = 255;
     let args: Vec<String> = std::env::args().collect();
     
-    let model = if args.len() == 1 { model::Model::open("obj/african_head.obj") }
+    let white = TGAColor::with_color(RGBAColor(255,255,255,255));
+    let red = TGAColor::with_color(RGBAColor(255,0,0,255));
+    let green = TGAColor::with_color(RGBAColor(0,255,0,255));
+    let blue = TGAColor::with_color(RGBAColor(0,0,255,255));
+    let yellow = TGAColor::with_color(RGBAColor(255,255,0,255));
+    
+    let model = if args.len() == 1 { model::Model::open("obj/cube.obj") }
                    else if args.len() == 2 { 
                        if args[1].find(".obj") != None { model::Model::open(&args[1]) } 
                        else { panic!("Error: Parameter: {} is not an obj file.", args[1]); }
                    }
                    else { panic!("Too many parameters input."); };
     
-
-    let mut image = TGAImage::with_info(width,height,RGB);
-    let mut zbuffer = vec![std::i32::MIN; width as usize * height as usize];
+    let mut image = TGAImage::with_info(width, height, tga_image::RGB);
+    let vp = viewport(width as u32 / 4, width as u32 / 4, width as u32 / 2, height as u32 / 2, depth);
     
-    let light_dir = Vec3f::new(0, 0, -1);
-    for i in 0..model.nfaces() {
-        let face = model.face(i);
-        let mut screen_coords = [Vec3i::new(0,0,0);3];
-        let mut world_coords = [Vec3f::new(0,0,0);3];
-        for j in 0..3 {
-            let v = model.vert(face[j] as usize);
-            screen_coords[j] = Vec3i::new((v.x+1.0)* width as f32 / 2.0, (v.y+1.0) * height as f32 / 2.0, (v.z + 1.0) * depth as f32 /2.0);
-            world_coords[j]  = v;
+    {
+        let x = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(1.0, 0.0, 0.0)))));
+        let y = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(0.0, 1.0, 0.0)))));
+        let o = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(0.0, 0.0, 0.0)))));
+        line(o, x, &mut image, red);
+        line(o, y, &mut image, green);
+    }
+    
+
+    let face = model.face(0);
+    for j in 0..face.len() {
+        let wp0 = model.vert(face[j] as usize);
+        let wp1 = model.vert(face[(j + 1) % face.len()] as usize);
+        {
+            let sp0 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(wp0))));    
+            let sp1 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(wp1))));
+            line(sp0, sp1, &mut image, white);
         }
-        let mut n = cross((world_coords[2]-world_coords[0]),(world_coords[1]-world_coords[0]));
-        n = n.normalize();
-        let intensity = n * light_dir;
-        if intensity > 0.0 {
-            let mut uv = vec![];
-            for k in 0..3 {
-                uv.push(model.uv(i, k));
-            }
-            triangle(
-                &mut screen_coords, 
-                &mut image, 
-                &model,
-                &mut uv,
-                intensity,
-                &mut zbuffer
-                );
+        {
+            let t = zoom(1.5);
+            let sp0 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&(&vp * &t) * &vec3f_to_mat(wp0))));    
+            let sp1 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&(&vp * &t) * &vec3f_to_mat(wp1))));
+            line(sp0, sp1, &mut image, yellow);
         }
     }
+        
     
     image.flip_vertically().unwrap();
     image.write_tga_file("output.tga", tga_image::WRITE_RLE_FILE).unwrap();
