@@ -111,7 +111,7 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &
         let beta = if second_half { (i - pts[1].y + pts[0].y) as f32 / segment_height }
                    else { i as f32 / segment_height };
         
-        let mut A = pts[0].check_add(&Vec3i::to_vec3f(&(pts[2] - pts[0])).mul_num(alpha));
+        let mut A = pts[0].check_add(&Vec3i::to_vec3f(&(pts[2] - pts[0])) * alpha);
         let mut B = if second_half { 
             pts[1].check_add(&Vec3i::to_vec3f(&(pts[2] - pts[1])).mul_num(beta)) 
             } else { 
@@ -170,11 +170,11 @@ fn main() {
     let vp = viewport(width as u32 / 4, width as u32 / 4, width as u32 / 2, height as u32 / 2, depth);
     
     {
-        let x = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(1.0, 0.0, 0.0)))));
-        let y = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(0.0, 1.0, 0.0)))));
-        let o = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(0.0, 0.0, 0.0)))));
-        line(o, x, &mut image, red);
-        line(o, y, &mut image, green);
+        // let x = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(1.0, 0.0, 0.0)))));
+        // let y = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(0.0, 1.0, 0.0)))));
+        // let o = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(Vec3f::new(0.0, 0.0, 0.0)))));
+        // line(o, x, &mut image, red);
+        // line(o, y, &mut image, green);
     }
     
 
@@ -183,15 +183,15 @@ fn main() {
         let wp0 = model.vert(face[j] as usize);
         let wp1 = model.vert(face[(j + 1) % face.len()] as usize);
         {
-            let sp0 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(wp0))));    
-            let sp1 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(wp1))));
-            line(sp0, sp1, &mut image, white);
+            // let sp0 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(wp0))));    
+            // let sp1 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&vp * &vec3f_to_mat(wp1))));
+            // line(sp0, sp1, &mut image, white);
         }
         {
             let t = zoom(1.5);
-            let sp0 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&(&vp * &t) * &vec3f_to_mat(wp0))));    
-            let sp1 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&(&vp * &t) * &vec3f_to_mat(wp1))));
-            line(sp0, sp1, &mut image, yellow);
+            // let sp0 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&(&vp * &t) * &vec3f_to_mat(wp0))));    
+            // let sp1 = Vec3f::to_other::<i32>(&mat_to_vec3f(&(&(&vp * &t) * &vec3f_to_mat(wp1))));
+            // line(sp0, sp1, &mut image, yellow);
         }
     }
         

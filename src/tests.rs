@@ -74,7 +74,7 @@ mod test_mat {
         let mut mat_2 = Mat::new(4, 3);
         mat_1[0][0] = 1.0;
         mat_2[0][0] = 1.0;
-        let res = &mat_1 * &mat_2;
+        let res = mat_1 * &mat_2;
         assert!(res[0][0] == 1.0);
     }
     #[test]
@@ -100,4 +100,5 @@ mod test_mat {
         let inv_mat = mat.inverse();
         assert_eq!(format!("{}",inv_mat), "[[0, 0, 1]\n [0, 1, 0]\n [1, 0, -1]]\n");
     }
+
 }

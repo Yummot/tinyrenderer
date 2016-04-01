@@ -41,12 +41,12 @@ macro_rules! vec_create {
                         data: [0 as $t; $n],
                     }
                 }
-                pub fn mul_num(&mut self, rhs: f64) -> $dst {
-                    for mut iter in self.data.iter_mut() {
-                        *iter = (*iter as f64 * rhs) as $t;
-                    }
-                    *self
-                }
+                // pub fn mul_num(&mut self, rhs: f64) -> $dst {
+                //     for mut iter in self.data.iter_mut() {
+                //         *iter = (*iter as f64 * rhs) as $t;
+                //     }
+                //     *self
+                // }
             }
             
             impl ::std::ops::Index<usize> for $dst {
@@ -71,7 +71,7 @@ macro_rules! vec_create {
                 }
                 fn normalize(&self) -> $dst {
                     let mut ret = *self;
-                    ret = ret.mul_num(1.0 / self.norm());
+                    ret = ret * (1.0 / self.norm());
                     ret
                 }
             }
@@ -86,6 +86,28 @@ macro_rules! vec_create {
                     }
                     
                     ret as f64
+                }
+            }
+            
+            impl Mul<f32> for $dst {
+                type Output = Self;
+                fn mul(self, rhs: f32) -> $dst {
+                    let mut ret = $dst::new();
+                    for i in 0..$n {
+                        ret[i] = cast::<f32,$t>(cast::<$t,f32>(self[i]).unwrap() * rhs).unwrap();
+                    }
+                    ret
+                }
+            }
+            
+            impl Mul<f64> for $dst {
+                type Output = Self;
+                fn mul(self, rhs: f64) -> $dst {
+                    let mut ret = $dst::new();
+                    for i in 0..$n {
+                        ret[i] = cast::<f64,$t>(cast::<$t,f64>(self[i]).unwrap() * rhs).unwrap();
+                    }
+                    ret
                 }
             }
             
@@ -185,7 +207,7 @@ impl<T> ::std::ops::IndexMut<usize> for Vec3<T> {
 macro_rules! vec_impl_helper {
     ($($dst : ident > ( $($attr_name : ident)*) ;)*) => (
         $(
-            impl<T> Mul for $dst<T>
+            impl<T> Mul<$dst<T>> for $dst<T>
                 where T: Clone + Mul<Output = T> + Add<Output = T>
             {
                 type Output = T;
@@ -195,6 +217,54 @@ macro_rules! vec_impl_helper {
                 }
             }
 
+            // impl<T> Mul<T> for $dst<T> 
+            //    where T: NumCast + Num + Copy + Mul<Output = T> {
+            //     type Output = Self;
+            //     fn mul(self, rhs: T) -> $dst<T> {
+            //         $dst {
+            //             $(
+            //                 $attr_name: self.$attr_name * rhs,
+            //             )*
+            //         }
+            //     }
+            // }
+            
+            impl<T> Mul<f32> for $dst<T>
+               where T: NumCast + Num + Copy + Mul<Output = T> {
+                type Output = $dst<T>;
+                fn mul(self, rhs: f32) -> $dst<T> {
+                    $dst {
+                        $(
+                            $attr_name: cast::<f32,T>(cast::<T,f32>(self.$attr_name).unwrap() * rhs).unwrap(),
+                        )*
+                    }
+                }
+            }
+            
+            impl<T> Mul<f64> for $dst<T>
+               where T: NumCast + Num + Copy + Mul<Output = T> {
+                type Output = $dst<T>;
+                fn mul(self, rhs: f64) -> $dst<T> {
+                    $dst {
+                        $(
+                            $attr_name: cast::<f64,T>(cast::<T,f64>(self.$attr_name).unwrap() * rhs).unwrap(),
+                        )*
+                    }
+                }
+            }
+            
+            impl<T> Mul<i32> for $dst<T>
+               where T: NumCast + Num + Copy + Mul<Output = T> {
+                type Output = $dst<T>;
+                fn mul(self, rhs: i32) -> $dst<T> {
+                    $dst {
+                        $(
+                            $attr_name: cast::<i32,T>(cast::<T,i32>(self.$attr_name).unwrap() * rhs).unwrap(),
+                        )*
+                    }
+                }
+            }
+            
             impl<T> Sub for $dst<T>
                 where T: Clone + Sub<Output = T>
             {
@@ -238,15 +308,15 @@ macro_rules! vec_impl_helper {
             impl<T> $dst<T>
                 where T: Mul<Output = T> + Clone + Copy + Zero + NumCast
             {
-                #[allow(dead_code)]
-                pub fn mul_num<N>(&self, rhs: N) -> $dst<T>
-                    where N: NumCast + Zero + Copy {
-                    $dst {
-                        $(
-                            $attr_name: num::cast::<f64,T>(num::cast::<T,f64>(self.$attr_name).unwrap() * num::cast::<N,f64>(rhs).unwrap()).unwrap(),
-                        )*
-                    }
-                }
+                // #[allow(dead_code)]
+                // pub fn mul_num<N>(&self, rhs: N) -> $dst<T>
+                //     where N: NumCast + Zero + Copy {
+                //     $dst {
+                //         $(
+                //             $attr_name: num::cast::<f64,T>(num::cast::<T,f64>(self.$attr_name).unwrap() * num::cast::<N,f64>(rhs).unwrap()).unwrap(),
+                //         )*
+                //     }
+                // }
                 #[allow(dead_code)]
                 pub fn new<N>($($attr_name : N),*) -> $dst<T>
                     where N: Num + NumCast + Copy, T: Num + NumCast + Copy {
@@ -299,7 +369,7 @@ macro_rules! norm_helper {
     ($($dst: ident > ( $($attr_name : ident)*);)*) => (
         $(
             impl<T> Norm for $dst<T>
-                where T: Clone + Copy + Mul<Output = T> + Add<Output = T> + Zero + NumCast
+                where T: Clone + Copy + Mul<Output = T> + Add<Output = T> + NumCast
             {
                 type Output = f64;
                 type Normalize = Self;
@@ -307,9 +377,10 @@ macro_rules! norm_helper {
                 fn norm(&self) -> f64 {
                     (num::cast::<T,f64>(sum!($(self.$attr_name * self.$attr_name),*)).unwrap()).sqrt()
                 }
+                #[allow(dead_code)]
                 fn normalize(&self) -> $dst<T> {
                     let mut ret = *self;
-                    ret = ret.mul_num(1.0 / self.norm());
+                    ret = ret * (1.0 / self.norm());
                     ret
                 }
             }
@@ -414,7 +485,7 @@ impl std::ops::IndexMut<usize> for Mat {
     }
 }
 
-impl<'a> std::ops::Mul for &'a Mat {
+impl<'a> std::ops::Mul<&'a Mat> for &'a Mat {
     type Output = Mat;
     fn mul(self, rhs: &'a Mat) -> Mat {
         if self.cols != rhs.rows { panic!("Mat::mul: Lhs.cols != Rhs.rows."); }
@@ -431,6 +502,14 @@ impl<'a> std::ops::Mul for &'a Mat {
         res
     }
 }
+
+
+// impl std::ops::Deref for Mat {
+//     type Target = Mat;
+//     fn deref<'a>(&'a self) -> &'a Self {
+//         self
+//     }
+// }
 
 impl Mat {
     #[allow(dead_code)]
