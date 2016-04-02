@@ -12,6 +12,11 @@ pub trait Norm {
     fn normalize(&self) -> Self::Normalize;
 }
 
+pub trait Cast {
+    type Output;
+    fn cast<T>(&self) -> Self::Output;
+}
+
 macro_rules! sum {
     ($t: expr, $($rest: tt)*) => (
         $t + sum!($($rest)*)
@@ -41,12 +46,7 @@ macro_rules! vec_create {
                         data: [0 as $t; $n],
                     }
                 }
-                // pub fn mul_num(&mut self, rhs: f64) -> $dst {
-                //     for mut iter in self.data.iter_mut() {
-                //         *iter = (*iter as f64 * rhs) as $t;
-                //     }
-                //     *self
-                // }
+
             }
             
             impl ::std::ops::Index<usize> for $dst {
@@ -216,18 +216,6 @@ macro_rules! vec_impl_helper {
                     sum!($(self.$attr_name * rhs.$attr_name),*) 
                 }
             }
-
-            // impl<T> Mul<T> for $dst<T> 
-            //    where T: NumCast + Num + Copy + Mul<Output = T> {
-            //     type Output = Self;
-            //     fn mul(self, rhs: T) -> $dst<T> {
-            //         $dst {
-            //             $(
-            //                 $attr_name: self.$attr_name * rhs,
-            //             )*
-            //         }
-            //     }
-            // }
             
             impl<T> Mul<f32> for $dst<T>
                where T: NumCast + Num + Copy + Mul<Output = T> {
@@ -307,18 +295,9 @@ macro_rules! vec_impl_helper {
 
             impl<T> $dst<T> 
                where T: Num + NumCast + Copy {
-                // #[allow(dead_code)]
-                // pub fn mul_num<N>(&self, rhs: N) -> $dst<T>
-                //     where N: NumCast + Zero + Copy {
-                //     $dst {
-                //         $(
-                //             $attr_name: num::cast::<f64,T>(num::cast::<T,f64>(self.$attr_name).unwrap() * num::cast::<N,f64>(rhs).unwrap()).unwrap(),
-                //         )*
-                //     }
-                // }
                 #[allow(dead_code)]
                 pub fn new<N>($($attr_name : N),*) -> $dst<T>
-                    where N: Num + NumCast + Copy{
+                    where N: Num + NumCast + Copy {
                     $dst {
                         $($attr_name: num::cast::<N,T>($attr_name).unwrap(),)*
                     }
@@ -338,22 +317,6 @@ macro_rules! vec_impl_helper {
                     }
                     ret
                 }
-                #[allow(dead_code)]
-                pub fn to_other<N>(v: &$dst<T>) -> $dst<N>
-                   where N: Num + NumCast + Copy {
-                    $dst {
-                        $($attr_name: num::cast::<T,N>(v.$attr_name).unwrap(),)*
-                    }       
-                }
-                // #[allow(dead_code)]
-                // pub fn mul_num<N>(&self, rhs: N) -> $dst<T>
-                //     where N: NumCast + Copy {
-                //     $dst {
-                //         $(
-                //             $attr_name: num::cast::<f64,T>(num::cast::<T,f64>(self.$attr_name).unwrap() * num::cast::<N,f64>(rhs).unwrap()).unwrap(),
-                //         )*
-                //     }
-                // }
                 
                 #[allow(dead_code)]
                 pub fn check_add<N>(&self, rhs: &$dst<N>) -> Self
@@ -418,20 +381,30 @@ pub type Vec2i = Vec2<i32>;
 pub type Vec3f = Vec3<f32>;
 pub type Vec3i = Vec3<i32>;
 
-impl Vec3i {
-    // const Vec3<float> &v) : 
-    // x(int(v.x+.5)), 
-    // y(int(v.y+.5)), 
-    // z(int(v.z+.5)
-    #[allow(dead_code)]
-    pub fn to_vec3f(src: &Self) -> Vec3f {
-        let mut ret = Vec3f::empty();
-        ret.x = src.x as f32 + 0.5;
-        ret.y = src.y as f32 + 0.5;
-        ret.z = src.z as f32 + 0.5;
+
+impl Cast for Vec3i {
+    type Output = Vec3f;
+    fn cast<Vec3f>(&self) -> Self::Output {
+        let mut ret = Vec3::<f32>::empty();
+        ret.x = self.x as f32 + 0.5;
+        ret.y = self.y as f32 + 0.5;
+        ret.z = self.z as f32 + 0.5;
         ret
     }
 }
+
+impl Cast for Vec3f {
+    type Output = Vec3i;
+    fn cast<Vec3i>(&self) -> Self::Output {
+        let mut ret = Vec3::<i32>::empty();
+        ret.x = self.x as i32;
+        ret.y = self.y as i32;
+        ret.z = self.z as i32;
+        ret
+    }
+}
+
+
 
 #[derive(Debug, Clone)]
 pub struct Mat {

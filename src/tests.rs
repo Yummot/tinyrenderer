@@ -36,6 +36,12 @@ mod test_geometry{
             assert_eq!(i as f32, v5f[i]);
         }
     }
+    #[test]
+    fn test_cast() {
+        let src = Vec3i::new(1,1,1);
+        let cast = src.cast::<Vec3f>();
+        assert_eq!("Vec3 { x: 1.5, y: 1.5, z: 1.5 }", format!("{:?}",cast));
+    }
 }
 
 #[cfg(test)]
@@ -74,7 +80,7 @@ mod test_mat {
         let mut mat_2 = Mat::new(4, 3);
         mat_1[0][0] = 1.0;
         mat_2[0][0] = 1.0;
-        let res = mat_1 * &mat_2;
+        let res = &mat_1 * &mat_2;
         assert!(res[0][0] == 1.0);
     }
     #[test]
