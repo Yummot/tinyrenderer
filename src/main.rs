@@ -19,7 +19,7 @@ fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: TGAColor) {
      if p0.x > p1.x {
          std::mem::swap(&mut p0, &mut p1);
      }
-     for x in p0.x..p1.x {
+     for x in p0.x..(p1.x + 1) {
          let t = (x as f32 - p0.x as f32) / (p1.x as f32 - p0.x as f32);
          let y = p0.y as f32 * (1.0 - t) + p1.y as f32 * t + 0.5;
          if steep {
