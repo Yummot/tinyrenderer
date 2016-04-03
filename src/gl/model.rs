@@ -2,8 +2,8 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use geometry::*;
-use tga_image::*;
+use super::geometry::*;
+use super::tga_image::*;
 
 #[derive(Debug,Clone)]
 pub struct Model {
