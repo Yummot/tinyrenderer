@@ -465,31 +465,24 @@ impl std::ops::IndexMut<usize> for Mat {
     }
 }
 
-// impl<'a> std::ops::Mul<&'a Mat> for &'a Mat {
-//     type Output = Mat;
-//     fn mul(self, rhs: &'a Mat) -> Mat {
-//         if self.cols != rhs.rows { panic!("Mat::mul: Lhs.cols != Rhs.rows."); }
-//         let mut res = Mat::new(self.rows, rhs.cols);
-//         //TODO loop unrolling
-//         for i in 0..self.rows as usize {
-//             for j in 0..rhs.cols as  usize {
-//                 for k in 0..self.cols as usize {
-//                     res[i][j] += self[i][k] * rhs[k][j];
-//                 }
-//             }
-//         }
+impl<'a> std::ops::Mul<&'a Mat> for &'a Mat {
+    type Output = Mat;
+    fn mul(self, rhs: &'a Mat) -> Mat {
+        if self.cols != rhs.rows { panic!("Mat::mul: Lhs.cols != Rhs.rows."); }
+        let mut res = Mat::new(self.rows, rhs.cols);
+        //TODO loop unrolling
+        for i in 0..self.rows as usize {
+            for j in 0..rhs.cols as  usize {
+                for k in 0..self.cols as usize {
+                    res[i][j] += self[i][k] * rhs[k][j];
+                }
+            }
+        }
         
-//         res
-//     }
-// }
+        res
+    }
+}
 
-
-// impl std::ops::Deref for Mat {
-//     type Target = Mat;
-//     fn deref<'a>(&'a self) -> &'a Self {
-//         self
-//     }
-// }
 
 impl Mat {
     #[allow(dead_code)]
@@ -514,21 +507,21 @@ impl Mat {
         }
         ret 
     }
-    #[allow(dead_code)]
-    pub fn mul(&self, rhs: &Mat) -> Mat {
-        if self.cols != rhs.rows { panic!("Mat::mul: Lhs.cols != Rhs.rows."); }
-        let mut res = Mat::new(self.rows, rhs.cols);
-        //TODO loop unrolling
-        for i in 0..self.rows as usize {
-            for j in 0..rhs.cols as  usize {
-                for k in 0..self.cols as usize {
-                    res[i][j] += self[i][k] * rhs[k][j];
-                }
-            }
-        }
+    // #[allow(dead_code)]
+    // pub fn mul(&self, rhs: &Mat) -> Mat {
+    //     if self.cols != rhs.rows { panic!("Mat::mul: Lhs.cols != Rhs.rows."); }
+    //     let mut res = Mat::new(self.rows, rhs.cols);
+    //     //TODO loop unrolling
+    //     for i in 0..self.rows as usize {
+    //         for j in 0..rhs.cols as  usize {
+    //             for k in 0..self.cols as usize {
+    //                 res[i][j] += self[i][k] * rhs[k][j];
+    //             }
+    //         }
+    //     }
         
-        res
-    }
+    //     res
+    // }
     #[allow(dead_code)]
     pub fn inverse(&self) -> Mat {
         if self.rows != self.cols { panic!("Mat::inverse not a square Matrix"); }

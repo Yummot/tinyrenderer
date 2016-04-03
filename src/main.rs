@@ -149,8 +149,8 @@ fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &
 
 #[allow(unused_variables)]
 fn main() {
-    let width = 800;
-    let height = 800;
+    let width = 100;
+    let height = 100;
     let depth = 255;
     let args: Vec<String> = std::env::args().collect();
     
