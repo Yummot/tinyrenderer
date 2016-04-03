@@ -80,7 +80,7 @@ mod test_mat {
         let mut mat_2 = Mat::new(4, 3);
         mat_1[0][0] = 1.0;
         mat_2[0][0] = 1.0;
-        let res = &mat_1 * &mat_2;
+        let res = mat_1.mul(&mat_2);
         assert!(res[0][0] == 1.0);
     }
     #[test]
