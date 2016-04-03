@@ -1,3 +1,4 @@
+#[macro_use]
 mod gl;
 pub use gl::*;
 #[cfg(test)]

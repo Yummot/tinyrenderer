@@ -1,6 +1,4 @@
 use super::super::std;
-use std::ops::*;
-use std::cmp::PartialEq;
 extern crate num;
 
 pub use self::num::*;
@@ -34,6 +32,9 @@ macro_rules! vec_eq {
 macro_rules! vec_create {
     ($(type Vec<$n : expr , $t : ty> = $dst : ident;)*) => (
         $(
+            use std::ops::*;
+            use std::cmp::PartialEq;
+            
             #[derive(Debug, Copy, Clone)]
             pub struct $dst {
                 data: [$t; $n],
@@ -76,7 +77,7 @@ macro_rules! vec_create {
                 }
             }
             
-            impl Mul for $dst {
+            impl Mul<$dst> for $dst {
                 type Output = f64;
                 #[allow(dead_code)]
                 fn mul(self, rhs: Self) -> f64 {
@@ -136,6 +137,16 @@ macro_rules! vec_create {
                     $dst {
                         data: ret,
                     }
+                }
+            }
+            
+            impl PartialEq for $dst {
+                #[allow(dead_code)]
+                fn eq(&self, rhs: &Self) -> bool {
+                    for i in 0..$n {
+                        if self[i] != rhs[i] { return false; }
+                    }
+                    return true;
                 }
             }
             

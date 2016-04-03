@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test_geometry{
-    use super::super::geometry::*;
+    use super::super::gl::*;
     vec_create!(
             type Vec<5, f32> = Vec5f;
     );
@@ -46,8 +46,7 @@ mod test_geometry{
 
 #[cfg(test)]
 mod test_model {
-    use super::super::model::*;
-    use super::super::geometry::*;
+    use super::super::gl::*;
     #[test]
     //unuse
     fn test_new(){
@@ -73,7 +72,7 @@ mod test_model {
 
 #[cfg(test)]
 mod test_mat {
-    use super::super::geometry::*;
+    use super::super::gl::*;
     #[test]
     fn test_mul() {
         let mut mat_1 = Mat::new(3, 4);

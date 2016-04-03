@@ -4,6 +4,7 @@ pub mod model;
 pub mod tga_image;
 pub use self::tga_image::*;
 pub use self::geometry::*;
+pub use self::model::*;
 use super::std;
 
 #[allow(dead_code)]
