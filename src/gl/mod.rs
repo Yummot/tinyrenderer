@@ -2,6 +2,7 @@
 pub mod geometry;
 pub mod model;
 pub mod tga_image;
+pub mod shader;
 pub use self::tga_image::*;
 pub use self::geometry::*;
 pub use self::model::*;
@@ -27,6 +28,58 @@ pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: TGAColor)
              image.set(x, y, color);
          }
      }
+}
+
+#[allow(non_snake_case)]
+#[allow(dead_code)]
+fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &mut [Vec2i], intensity: f32, zbuffer: &mut [i32]) {   
+    if (pts[0].y == pts[1].y &&  pts[0].y == pts[2].y) && (pts[0].x == pts[1].x &&  pts[0].x == pts[2].x) { return }
+    if pts[0].y > pts[1].y { pts.swap(0,1); uv.swap(0,1); }
+    if pts[0].y > pts[2].y { pts.swap(0,2); uv.swap(0,2); }
+    if pts[1].y > pts[2].y { pts.swap(1,2); uv.swap(1,2); }   
+    
+    let total_height = pts[2].y -pts[0].y;
+    for i in 0..total_height {
+        let second_half = i > (pts[1].y - pts[0].y) || pts[1].y == pts[0].y;
+        let segment_height = if second_half { pts[2].y - pts[1].y } else { pts[1].y - pts[0].y } as f32;
+        let alpha = i as f32 / total_height as f32;
+        let beta = if second_half { (i - pts[1].y + pts[0].y) as f32 / segment_height }
+                   else { i as f32 / segment_height };
+        
+        let mut A = pts[0].check_add(&((pts[2] - pts[0]) * alpha).cast::<Vec3f>());
+        let mut B = if second_half { 
+            pts[1].check_add(&((pts[2] - pts[1]) * beta).cast::<Vec3f>()) 
+            } else { 
+                pts[0].check_add(&((pts[1] - pts[0]) * beta).cast::<Vec3f>()) 
+            };
+        let mut uvA = uv[0] + (uv[2] - uv[0]) * alpha;
+        let mut uvB = if second_half { uv[1] + (uv[2] - uv[1]) * beta } else { uv[0] + (uv[1] - uv[0]) * beta };
+        
+        if A.x > B.x { 
+            std::mem::swap(&mut A, &mut B); 
+            std::mem::swap(&mut uvA, &mut uvB);
+        }
+        for j in A.x..(B.x + 1) {
+            let phi = if B.x == A.x { 1. }
+                      else { (j - A.x) as f32 / (B.x - A.x) as f32 };
+            let p = (A.cast::<Vec3f>() + ((B - A) * phi).cast::<Vec3f>()).cast::<Vec3i>();
+            
+            let uvp = uvA + (uvB - uvA) *phi;
+            let idx = (p.x + p.y * image.get_width()) as usize;
+            if zbuffer[idx] < p.z {
+                zbuffer[idx] = p.z;
+                let color = model.diffuse(uvp);
+
+                image.set(p.x, p.y, 
+                    TGAColor::with_color(
+                        RGBAColor(
+                            (color.r as f32 * intensity) as u8, 
+                            (color.g as f32 * intensity) as u8, 
+                            (color.b as f32 * intensity) as u8, 
+                            0)));
+            }
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -94,54 +147,6 @@ pub fn rotation_z(cosangle: f32, sinangle: f32) -> Mat {
     r
 }
 
-#[allow(non_snake_case)]
-#[allow(dead_code)]
-fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &mut [Vec2i], intensity: f32, zbuffer: &mut [i32]) {   
-    if (pts[0].y == pts[1].y &&  pts[0].y == pts[2].y) && (pts[0].x == pts[1].x &&  pts[0].x == pts[2].x) { return }
-    if pts[0].y > pts[1].y { pts.swap(0,1); uv.swap(0,1); }
-    if pts[0].y > pts[2].y { pts.swap(0,2); uv.swap(0,2); }
-    if pts[1].y > pts[2].y { pts.swap(1,2); uv.swap(1,2); }   
+pub fn lookat() {
     
-    let total_height = pts[2].y -pts[0].y;
-    for i in 0..total_height {
-        let second_half = i > (pts[1].y - pts[0].y) || pts[1].y == pts[0].y;
-        let segment_height = if second_half { pts[2].y - pts[1].y } else { pts[1].y - pts[0].y } as f32;
-        let alpha = i as f32 / total_height as f32;
-        let beta = if second_half { (i - pts[1].y + pts[0].y) as f32 / segment_height }
-                   else { i as f32 / segment_height };
-        
-        let mut A = pts[0].check_add(&((pts[2] - pts[0]) * alpha).cast::<Vec3f>());
-        let mut B = if second_half { 
-            pts[1].check_add(&((pts[2] - pts[1]) * beta).cast::<Vec3f>()) 
-            } else { 
-                pts[0].check_add(&((pts[1] - pts[0]) * beta).cast::<Vec3f>()) 
-            };
-        let mut uvA = uv[0] + (uv[2] - uv[0]) * alpha;
-        let mut uvB = if second_half { uv[1] + (uv[2] - uv[1]) * beta } else { uv[0] + (uv[1] - uv[0]) * beta };
-        
-        if A.x > B.x { 
-            std::mem::swap(&mut A, &mut B); 
-            std::mem::swap(&mut uvA, &mut uvB);
-        }
-        for j in A.x..(B.x + 1) {
-            let phi = if B.x == A.x { 1. }
-                      else { (j - A.x) as f32 / (B.x - A.x) as f32 };
-            let p = (A.cast::<Vec3f>() + ((B - A) * phi).cast::<Vec3f>()).cast::<Vec3i>();
-            
-            let uvp = uvA + (uvB - uvA) *phi;
-            let idx = (p.x + p.y * image.get_width()) as usize;
-            if zbuffer[idx] < p.z {
-                zbuffer[idx] = p.z;
-                let color = model.diffuse(uvp);
-
-                image.set(p.x, p.y, 
-                    TGAColor::with_color(
-                        RGBAColor(
-                            (color.r as f32 * intensity) as u8, 
-                            (color.g as f32 * intensity) as u8, 
-                            (color.b as f32 * intensity) as u8, 
-                            0)));
-            }
-        }
-    }
 }
