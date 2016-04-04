@@ -66,31 +66,6 @@ pub struct TGAColor {
 
 pub struct RGBAColor(pub u8, pub u8, pub u8, pub u8);
 
-// impl ::std::ops::Index<usize> for RGBAColor {
-//     type Output = u8;
-//     fn index<'a>(&'a self, index: usize) -> &'a u8 {
-//         match index {
-//             0 => &self.2,
-//             1 => &self.1,
-//             2 => &self.0,
-//             3 => &self.3,
-//             _ => panic!("Error: Out of bounds while indexing RGBAColor."),
-//         }
-//     }
-// }
-
-// impl ::std::ops::Index<usize> for RGBAColor {
-//     type Output = u8;
-//     fn index<'a>(&'a self, index: usize) -> &'a u8 {
-//         match index {
-//             0 => &self.0,
-//             1 => &self.1,
-//             2 => &self.2,
-//             3 => &self.3,
-//             _ => panic!("Error: Out of bounds while indexing RGBAColor.")
-//         }
-//     }
-// }
 
 #[allow(dead_code)]
 pub fn u32_from_be(buf: &[u8]) -> u32 {
@@ -163,13 +138,42 @@ impl TGAColor {
             Some(())
         }
     }
-
+    #[inline]
+    #[allow(dead_code)]
+    pub fn red(&self) -> u8 { self.r }
+    #[inline]
+    #[allow(dead_code)]
+    pub fn green(&self) -> u8 { self.g }
+    #[inline]
+    #[allow(dead_code)]
+    pub fn blue(&self) -> u8 { self.b }
+    #[inline]
+    #[allow(dead_code)]
+    pub fn alpha(&self) -> u8 { self.a }
+    #[inline]
+    #[allow(dead_code)]
+    pub fn set_red(&mut self, r: u8) { self.r = r; }
+    #[inline]
+    #[allow(dead_code)]
+    pub fn set_green(&mut self, g: u8) { self.g = g; }
+    #[inline]
+    #[allow(dead_code)]
+    pub fn set_blue(&mut self, b: u8) { self.b = b; }
+    #[inline]
+    #[allow(dead_code)]
+    pub fn set_alpha(&mut self, alpha: u8) { self.a = alpha; }
     #[inline]
     #[allow(dead_code)]
     pub fn val(&self) -> u32 {
         unsafe { std::mem::transmute::<[u8; 4], u32>(self.raw()) }
     }
-
+    #[inline]
+    #[allow(dead_code)]
+    pub fn from_val(val: u32) -> TGAColor {
+        let mut ret = TGAColor::new();
+        ret.set_val(val, 4);
+        ret
+    }
     #[inline]
     #[allow(dead_code)]
     pub fn set_val(&mut self, val: u32, bytespp: usize) {
@@ -222,6 +226,17 @@ impl ::std::ops::Index<usize> for TGAColor {
             3 => &self.a,
             _ => panic!("Error: Out of bounds while indexing RGBAColor."),
         }
+    }
+}
+
+impl std::ops::Mul<f32> for TGAColor {
+    type Output = TGAColor;
+    fn mul(self, rhs: f32) -> TGAColor {
+        let mut ret = self;
+        for i in 0..3 {
+            ret[i] = (ret[i] as f32 * rhs) as u8; 
+        }
+        ret
     }
 }
 
@@ -328,7 +343,7 @@ impl TGAImage {
             self.load_rle_data(&mut file);
         } else { panic!("Unkown file format {}", tga_header.datatypecode); }
         if (tga_header.imagedescriptor & 0x20) == 0 {
-            println!("fv");
+            // println!("fv");
             self.flip_vertically().unwrap();
         }
         if (tga_header.imagedescriptor & 0x10) != 0 {

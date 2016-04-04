@@ -6,6 +6,7 @@ pub mod shader;
 pub use self::tga_image::*;
 pub use self::geometry::*;
 pub use self::model::*;
+pub use self::shader::*;
 use super::std;
 
 #[allow(dead_code)]
@@ -32,121 +33,107 @@ pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: TGAColor)
 
 #[allow(non_snake_case)]
 #[allow(dead_code)]
-fn triangle(pts: &mut [Vec3i], image: &mut TGAImage, model: &model::Model, uv: &mut [Vec2i], intensity: f32, zbuffer: &mut [i32]) {   
-    if (pts[0].y == pts[1].y &&  pts[0].y == pts[2].y) && (pts[0].x == pts[1].x &&  pts[0].x == pts[2].x) { return }
-    if pts[0].y > pts[1].y { pts.swap(0,1); uv.swap(0,1); }
-    if pts[0].y > pts[2].y { pts.swap(0,2); uv.swap(0,2); }
-    if pts[1].y > pts[2].y { pts.swap(1,2); uv.swap(1,2); }   
-    
-    let total_height = pts[2].y -pts[0].y;
-    for i in 0..total_height {
-        let second_half = i > (pts[1].y - pts[0].y) || pts[1].y == pts[0].y;
-        let segment_height = if second_half { pts[2].y - pts[1].y } else { pts[1].y - pts[0].y } as f32;
-        let alpha = i as f32 / total_height as f32;
-        let beta = if second_half { (i - pts[1].y + pts[0].y) as f32 / segment_height }
-                   else { i as f32 / segment_height };
-        
-        let mut A = pts[0].check_add(&((pts[2] - pts[0]) * alpha).cast::<Vec3f>());
-        let mut B = if second_half { 
-            pts[1].check_add(&((pts[2] - pts[1]) * beta).cast::<Vec3f>()) 
-            } else { 
-                pts[0].check_add(&((pts[1] - pts[0]) * beta).cast::<Vec3f>()) 
-            };
-        let mut uvA = uv[0] + (uv[2] - uv[0]) * alpha;
-        let mut uvB = if second_half { uv[1] + (uv[2] - uv[1]) * beta } else { uv[0] + (uv[1] - uv[0]) * beta };
-        
-        if A.x > B.x { 
-            std::mem::swap(&mut A, &mut B); 
-            std::mem::swap(&mut uvA, &mut uvB);
-        }
-        for j in A.x..(B.x + 1) {
-            let phi = if B.x == A.x { 1. }
-                      else { (j - A.x) as f32 / (B.x - A.x) as f32 };
-            let p = (A.cast::<Vec3f>() + ((B - A) * phi).cast::<Vec3f>()).cast::<Vec3i>();
-            
-            let uvp = uvA + (uvB - uvA) *phi;
-            let idx = (p.x + p.y * image.get_width()) as usize;
-            if zbuffer[idx] < p.z {
-                zbuffer[idx] = p.z;
-                let color = model.diffuse(uvp);
-
-                image.set(p.x, p.y, 
-                    TGAColor::with_color(
-                        RGBAColor(
-                            (color.r as f32 * intensity) as u8, 
-                            (color.g as f32 * intensity) as u8, 
-                            (color.b as f32 * intensity) as u8, 
-                            0)));
-            }
-        }
+fn barycentric(A: Vec3i, B: Vec3i, C: Vec3i, P: Vec3i) -> Vec3f {
+    let mut s = [Vec3f::zero();2];
+    for i in (0..2).rev() {
+        s[i][0] = C[i] as f32 - A[i] as f32;
+        s[i][1] = B[i] as f32 - A[i] as f32;
+        s[i][2] = A[i] as f32 - P[i] as f32;
     }
-}
-
-#[allow(dead_code)]
-pub fn mat_to_vec3f(m: &Mat) -> Vec3f {
-    Vec3f::new(m[0][0] / m[3][0], m[1][0] / m[3][0], m[2][0] / m[3][0])
-}
-#[allow(dead_code)]
-pub fn vec3f_to_mat(v: Vec3f) -> Mat {
-    Mat::builder(&[&[v.x],&[v.y],&[v.z],&[1.0]]).unwrap()
-}
-#[allow(dead_code)]
-pub fn viewport(x: u32, y: u32, w: u32, h: u32, depth: u32) -> Mat {
-    let mut ret = Mat::identity(4);
-    ret[0][3] = x as f32 + w as f32 / 2.0;
-    ret[1][3] = y as f32 + h as f32 / 2.0;
-    ret[2][3] = depth as f32 / 2.0;
-
-    ret[0][0] = w as f32 / 2.0;
-    ret[1][1] = h as f32 / 2.0;
-    ret[2][2] = depth as f32 / 2.0; 
     
-    ret
-}
-#[allow(dead_code)]
-pub fn translation(v: Vec3f) -> Mat {
-    let mut ret = Mat::identity(4);
-    ret[0][3] = v.x;
-    ret[1][3] = v.y;
-    ret[2][3] = v.z;
-    ret
-}
-#[allow(dead_code)]
-pub fn zoom(factor: f32) -> Mat {
-    let mut z = Mat::identity(4);
-    z[0][0] = factor;
-    z[1][1] = factor;
-    z[2][2] = factor;
-    z
-}
-#[allow(dead_code)]
-pub fn rotation_x(cosangle: f32, sinangle: f32) -> Mat {
-    let mut r = Mat::identity(4);
-    r[1][1] = cosangle;
-    r[2][2] = cosangle;
-    r[1][2] = -sinangle;
-    r[2][1] =  sinangle;
-    r
-}
-#[allow(dead_code)]
-pub fn rotation_y(cosangle: f32, sinangle: f32) -> Mat {
-    let mut r = Mat::identity(4);
-    r[0][0] = cosangle;
-    r[2][2] = cosangle;
-    r[0][2] =  sinangle;
-    r[2][0] = -sinangle;
-    r
-}
-#[allow(dead_code)]
-pub fn rotation_z(cosangle: f32, sinangle: f32) -> Mat {
-    let mut r = Mat::identity(4);
-    r[0][0] = cosangle;
-    r[1][1] = cosangle;
-    r[0][1] = -sinangle;
-    r[1][0] =  sinangle;
-    r
+    let u = cross::<f32>(s[0], s[1]);
+    if u[2].abs() > 1e-2 {
+        return Vec3f::new(1.0 - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
+    }
+    return Vec3f::new(-1.0, 1.0, 1.0)    
 }
 
-pub fn lookat() {
-    
+pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, zbuffer: &mut TGAImage) {
+    let mut bboxmin = Vec2i::new(std::i32::MAX, std::i32::MAX);
+    let mut bboxmax = Vec2i::new(std::i32::MIN, std::i32::MIN);
+    for i in 0..3 {
+        bboxmin[0] = std::cmp::min(bboxmin[0], pts[i][0]);
+        bboxmax[0] = std::cmp::max(bboxmax[0], pts[i][0]);    
+        bboxmin[1] = std::cmp::min(bboxmin[1], pts[i][1]);
+        bboxmax[1] = std::cmp::max(bboxmax[1], pts[i][1]);  
+    }
+    let mut p = Vec3i::new(bboxmin.x, bboxmin.y, 0);
+    let mut color = TGAColor::new();
+    while p.x <= bboxmax.x {
+        while p.y <= bboxmax.y {
+            let c = barycentric(pts[0], pts[1], pts[2], p);
+            p.z = 0.0.max(255.0.min((pts[0].z as f32 * c.x + pts[1].z as f32 * c.y + pts[2].z as f32 * c.z + 0.5))) as i32;
+            if c.x < 0.0 || c.y < 0.0 || c.z < 0.0 || zbuffer.get(p.x, p.y)[0] as i32 > p.z { 
+                p.y += 1;
+                continue 
+            }
+            let discard = shader.fragment(c, &mut color);
+            if !discard {
+                zbuffer.set(p.x, p.y, TGAColor::from_val(p.z as u32));
+                image.set(p.x, p.y, color);
+            }
+            p.y += 1;
+        }
+        p.x += 1;    
+    }
+    p = Vec3i::zero();
+}
+
+#[allow(dead_code)]
+pub struct Camera {
+    modelview: Mat4,
+    viewport: Mat4,
+    projection: Mat4,
+    light_dir: Vec3f,
+}
+
+pub static mut Camera1: Camera = Camera {
+    modelview: Mat4 { mat: [0f32;16] },
+    viewport: Mat4 { mat: [0f32;16] },
+    projection: Mat4 { mat: [0f32;16] },
+    light_dir: Vec3f { x: 1.0, y: 1.0, z: 1.0 }
+};
+
+
+impl Camera {
+    #[allow(dead_code)]
+    pub fn new() -> Camera {
+        Camera {
+            modelview: Mat4::zero(),
+            viewport: Mat4::zero(),
+            projection: Mat4::zero(),
+            light_dir: Vec3f::zero(),
+        }    
+    }
+    pub fn set_light_dir(&mut self, light_dir: Vec3f) {
+        self.light_dir = light_dir;
+    }
+    #[allow(dead_code)]
+    pub fn viewport(&mut self, x: i32, y: i32, w: i32, h: i32) {
+        self.viewport = Mat4::identity();
+        self.viewport[(0,3)] = x as f32 + w as f32 / 2.0;
+        self.viewport[(1,3)] = y as f32 + h as f32 / 2.0;
+        self.viewport[(2,3)] = 255.0 / 2.0;
+        self.viewport[(0,0)] = w as f32 / 2.0;
+        self.viewport[(1,1)] = h as f32 / 2.0;
+        self.viewport[(2,2)] = 255.0 / 2.0;
+    }
+    #[allow(dead_code)]
+    pub fn projection(&mut self, coeff: f32) {
+        self.projection = Mat4::identity();
+        self.projection[(3,2)] = coeff;
+    }
+    #[allow(dead_code)]
+    pub fn lookat(&mut self, eye: Vec3f, center: Vec3f, up: Vec3f) {
+        let z = (eye-center).normalize();
+        let x = cross(up,z).normalize();
+        let y = cross(z,x).normalize();
+        self.modelview = Mat4::identity();
+        for i in 0..3 {
+            self.modelview[(0,i)] = x[i];
+            self.modelview[(1,i)] = y[i];
+            self.modelview[(2,i)] = z[i];
+            self.modelview[(i,3)] = -center[i];
+        }        
+    }
 }

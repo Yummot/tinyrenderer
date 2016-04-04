@@ -12,6 +12,8 @@ pub struct Model {
     norms_: Vec<Vec3f>,
     uv_: Vec<Vec2f>,
     diffusemap_: TGAImage,
+    normalmap_: TGAImage,
+    specularmap_: TGAImage,
 }
 
 fn solver(x: &&str, faces: &mut Vec<Vec<Vec3i>>, verts: &mut Vec<Vec3f>, norms: &mut Vec<Vec3f>, uv: &mut Vec<Vec2f>) {
@@ -84,13 +86,16 @@ impl Model {
             norms_: norm_vec,
             uv_: uv_vec,
             diffusemap_: TGAImage::new(),
+            normalmap_: TGAImage::new(),
+            specularmap_: TGAImage::new(),
         }
     }
     #[allow(dead_code)]
     pub fn open_with_texture(filename: &str) -> Model {
         let mut ret = Model::open(filename);
         ret.load_texture(filename, "_diffuse.tga");
-        
+        ret.load_texture(filename, "_nm.tga");
+        ret.load_texture(filename, "_spec.tga");
         ret
     }
     #[allow(dead_code)]
@@ -114,6 +119,10 @@ impl Model {
         self.verts_[idx]
     }
     #[allow(dead_code)]
+    pub fn face_vert(&self, iface: i32, nthvert: i32) -> Vec3f {
+         self.verts_[self.faces_[iface as usize][nthvert as usize][0] as usize]    
+    }
+    #[allow(dead_code)]
     pub fn face(&self, idx: usize) -> Vec<i32> {
         let mut ret = vec![];
         for i in 0..self.faces_[idx].len() { ret.push(self.faces_[idx][i][0]); }
@@ -131,6 +140,24 @@ impl Model {
             self.uv_[idx].x * self.diffusemap_.get_width() as f32,
             self.uv_[idx].y * self.diffusemap_.get_height() as f32
             )
+    }
+    #[allow(dead_code)]
+    pub fn normal(&self, uv: Vec2i) -> Vec3f {
+        let color = self.normalmap_.get(uv[0], uv[1]);
+        let mut res = Vec3f::zero();
+        for i in 0..3 {
+            res[2 - i] = color[i] as f32 / 255.0 * 2.0 - 1.0;
+        }
+        res
+    }
+    pub fn specular(&self, uv: Vec2i) -> f32 {
+        self.specularmap_.get(uv.x, uv.y)[0] as f32 / 1.0
+    }
+
+    pub fn face_normal(&self, iface: i32, nthvert: i32) -> Vec3f {
+        let watch = self.faces_[iface as usize][nthvert as usize][2];
+        let idx = self.faces_[iface as usize][nthvert as usize][2] as usize;
+        return self.norms_[idx].normalize();
     }
 }
 
