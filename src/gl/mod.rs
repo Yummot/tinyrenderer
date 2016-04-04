@@ -76,7 +76,6 @@ pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, 
         }
         p.x += 1;    
     }
-    p = Vec3i::zero();
 }
 
 #[allow(dead_code)]
@@ -84,10 +83,10 @@ pub struct Camera {
     modelview: Mat4,
     viewport: Mat4,
     projection: Mat4,
-    light_dir: Vec3f,
+    pub light_dir: Vec3f,
 }
 
-pub static mut Camera1: Camera = Camera {
+pub static mut CameraOne: Camera = Camera {
     modelview: Mat4 { mat: [0f32;16] },
     viewport: Mat4 { mat: [0f32;16] },
     projection: Mat4 { mat: [0f32;16] },

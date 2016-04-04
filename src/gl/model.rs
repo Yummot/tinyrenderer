@@ -155,7 +155,6 @@ impl Model {
     }
 
     pub fn face_normal(&self, iface: i32, nthvert: i32) -> Vec3f {
-        let watch = self.faces_[iface as usize][nthvert as usize][2];
         let idx = self.faces_[iface as usize][nthvert as usize][2] as usize;
         return self.norms_[idx].normalize();
     }
