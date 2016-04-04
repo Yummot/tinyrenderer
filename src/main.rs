@@ -22,6 +22,7 @@ fn main() {
     
     let mut image = gl::TGAImage::with_info(width as isize, height as isize, tga_image::RGB);
     let mut zbuffer = gl::TGAImage::with_info(width as isize, height as isize, tga_image::GRAYSCALE);
+    let mut count = vec![];
     unsafe{
         CameraOne.lookat(eye, center, up);
         CameraOne.viewport(width / 8, height / 8, width * 3 / 4, height * 3 / 4);
@@ -35,10 +36,11 @@ fn main() {
         for j in 0..3 {
             unsafe { screen_coords[j] = shader.vertex(&CameraOne, &model, i as i32, j as i32); }
         }
-        gl::triangle(&mut screen_coords, &mut shader, &mut image, &mut zbuffer);
+        count.push(gl::triangle(&mut screen_coords, &mut shader, &mut image, &mut zbuffer));
     }
     
     image.flip_vertically().unwrap();
     image.write_tga_file("output.tga", tga_image::WRITE_RLE_FILE).unwrap();
+    println!("{:?}",count);
     println!("Finished");
 }

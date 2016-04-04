@@ -464,9 +464,9 @@ impl Cast for Vec3i {
     type Output = Vec3f;
     fn cast<Vec3f>(&self) -> Self::Output {
         let mut ret = Vec3::<f32>::zero();
-        ret.x = self.x as f32 + 0.5;
-        ret.y = self.y as f32 + 0.5;
-        ret.z = self.z as f32 + 0.5;
+        ret.x = self.x as f32;
+        ret.y = self.y as f32;
+        ret.z = self.z as f32;
         ret
     }
 }
@@ -475,9 +475,9 @@ impl Cast for Vec3f {
     type Output = Vec3i;
     fn cast<Vec3i>(&self) -> Self::Output {
         let mut ret = Vec3::<i32>::zero();
-        ret.x = self.x as i32;
-        ret.y = self.y as i32;
-        ret.z = self.z as i32;
+        ret.x = (self.x + 0.5) as i32;
+        ret.y = (self.y + 0.5) as i32;
+        ret.z = (self.z + 0.5) as i32;
         ret
     }
 }
@@ -486,8 +486,8 @@ impl Cast for Vec2i {
     type Output = Vec2f;
     fn cast<Vec2f>(&self) -> Self::Output {
         let mut ret = Vec2::<f32>::zero();
-        ret.x = self.x as f32 + 0.5;
-        ret.y = self.y as f32 + 0.5;
+        ret.x = self.x as f32;
+        ret.y = self.y as f32;
         ret
     }
 }
@@ -496,8 +496,8 @@ impl Cast for Vec2f {
     type Output = Vec2i;
     fn cast<Vec2i>(&self) -> Self::Output {
         let mut ret = Vec2::<i32>::zero();
-        ret.x = self.x as i32;
-        ret.y = self.y as i32;
+        ret.x = (self.x + 0.5) as i32;
+        ret.y = (self.y + 0.5) as i32;
         ret
     }
 }

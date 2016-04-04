@@ -35,7 +35,7 @@ pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: TGAColor)
 #[allow(dead_code)]
 fn barycentric(A: Vec3i, B: Vec3i, C: Vec3i, P: Vec3i) -> Vec3f {
     let mut s = [Vec3f::zero();2];
-    for i in (0..2).rev() {
+    for i in 0..2 {
         s[i][0] = C[i] as f32 - A[i] as f32;
         s[i][1] = B[i] as f32 - A[i] as f32;
         s[i][2] = A[i] as f32 - P[i] as f32;
@@ -48,9 +48,10 @@ fn barycentric(A: Vec3i, B: Vec3i, C: Vec3i, P: Vec3i) -> Vec3f {
     return Vec3f::new(-1.0, 1.0, 1.0)    
 }
 
-pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, zbuffer: &mut TGAImage) {
+pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, zbuffer: &mut TGAImage) -> ((i32,i32),(i32,i32),usize) {
     let mut bboxmin = Vec2i::new(std::i32::MAX, std::i32::MAX);
     let mut bboxmax = Vec2i::new(std::i32::MIN, std::i32::MIN);
+    let mut count = 0;
     for i in 0..3 {
         bboxmin[0] = std::cmp::min(bboxmin[0], pts[i][0]);
         bboxmax[0] = std::cmp::max(bboxmax[0], pts[i][0]);    
@@ -69,13 +70,15 @@ pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, 
             }
             let discard = shader.fragment(c, &mut color);
             if !discard {
-                zbuffer.set(p.x, p.y, TGAColor::from_val(p.z as u32));
+                zbuffer.set(p.x, p.y, TGAColor::grayscale(p.z as u8));
                 image.set(p.x, p.y, color);
+                count += 1;
             }
             p.y += 1;
         }
         p.x += 1;    
     }
+    ((bboxmin.x,bboxmin.y),(bboxmax.x,bboxmax.y),count)
 }
 
 #[allow(dead_code)]

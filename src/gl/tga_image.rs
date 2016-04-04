@@ -176,6 +176,17 @@ impl TGAColor {
     }
     #[inline]
     #[allow(dead_code)]
+    pub fn grayscale(val: u8) -> TGAColor {
+        TGAColor {
+            r: val,
+            g: 0,
+            b: 0,
+            a: 0,
+            bytespp: 1,
+        }
+    }
+    #[inline]
+    #[allow(dead_code)]
     pub fn set_val(&mut self, val: u32, bytespp: usize) {
         let raw = unsafe { std::mem::transmute::<u32, [u8; 4]>(val) };
 
@@ -233,6 +244,9 @@ impl std::ops::Mul<f32> for TGAColor {
     type Output = TGAColor;
     fn mul(self, rhs: f32) -> TGAColor {
         let mut ret = self;
+        let rhs = if rhs > 1.0 { 1.0 } 
+                  else if rhs < 0.0 { 0.0 }
+                  else { rhs };
         for i in 0..3 {
             ret[i] = (ret[i] as f32 * rhs) as u8; 
         }
