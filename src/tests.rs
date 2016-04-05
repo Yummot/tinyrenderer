@@ -40,7 +40,7 @@ mod test_geometry{
     fn test_cast() {
         let src = Vec3i::new(1,1,1);
         let cast = src.cast::<Vec3f>();
-        assert_eq!("Vec3 { x: 1.5, y: 1.5, z: 1.5 }", format!("{:?}",cast));
+        assert_eq!("Vec3 { x: 1, y: 1, z: 1 }", format!("{:?}",cast));
     }
 }
 
@@ -118,3 +118,50 @@ mod test_model {
 //         assert_eq!(res, Vec4f::new([1.0,3.0,1.0,3.0]));
 //     }    
 // }
+
+
+
+#[cfg(test)]
+mod test_mat4 {
+    use super::super::gl::*;
+    #[test]
+    fn test_sub() {
+        let mut a = Mat4::identity();
+        *a.at_mut(0, 1) = 1f32;
+        let mut b = Mat4::identity();
+        *b.at_mut(2, 3) = 3f32;
+        let c = Mat4::new([0f32, 1f32, 0f32, 0f32,
+                            0f32, 0f32, 0f32, 0f32,
+                            0f32, 0f32, 0f32, -3f32,
+                            0f32, 0f32, 0f32, 0f32]);
+        assert!(a - b == c);
+    }
+    #[test]
+    fn test_mul() {
+        assert!(Mat4::identity() * Mat4::identity() == Mat4::identity());
+        let a = Mat4::new([1f32,  2f32,  1f32,  0f32,
+                            3f32,  1f32,  4f32,  2f32,
+                            1f32,  2f32, -5f32,  4f32,
+                            3f32,  2f32,  4f32,  1f32]);
+        let b = Mat4::new([8f32,  0f32,  2f32,  3f32,
+                            -2f32,  1f32,  0f32,  1f32,
+                            5f32, -2f32,  3f32,  1f32,
+                            0f32,  0f32,  4f32,  1f32]);
+        let c = Mat4::new([9f32,   0f32,   5f32,   6f32,
+                            42f32,  -7f32,  26f32,  16f32,
+                            -21f32,  12f32,   3f32,   4f32,
+                            40f32,  -6f32,  22f32,  16f32]);
+        assert!(a * b == c);
+    }  
+    #[test]
+    fn test_mat4_mut() {
+        let mat = Mat4::new([1f32,  2f32,  1f32,  0f32,
+                         3f32,  1f32,  4f32,  2f32,
+                         1f32,  2f32, -5f32,  4f32,
+                         3f32,  2f32,  4f32,  1f32]);
+        let mut v4f = Vec4f::zero();
+        v4f[0] = 1.0;
+        let res = mat * v4f;
+        assert_eq!(res, Vec4f::new([1.0,3.0,1.0,3.0]));
+    }  
+}

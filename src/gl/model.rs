@@ -154,9 +154,12 @@ impl Model {
         self.specularmap_.get(uv.x, uv.y)[0] as f32 / 1.0
     }
 
-    pub fn face_normal(&self, iface: i32, nthvert: i32) -> Vec3f {
+    pub fn face_normal(&mut self, iface: i32, nthvert: i32) -> Vec3f {
         let idx = self.faces_[iface as usize][nthvert as usize][2] as usize;
-        return self.norms_[idx].normalize();
+        self.norms_[idx] = self.norms_[idx].normalize();
+        let mut test = self.norms_[idx];
+        test = test * 1;
+        return self.norms_[idx];
     }
 }
 

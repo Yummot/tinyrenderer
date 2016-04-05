@@ -431,7 +431,7 @@ impl Vec3f {
     #[allow(dead_code)]
     pub fn embed(&self, fill: f32) -> Vec4f {
         let mut ret = Vec4f::zero();
-        for i in (0..ret.len()).rev() {
+        for i in 0..ret.len() {
             ret[i] = if i < self.len() { self[i] } else { fill };
         }     
         ret 
@@ -765,18 +765,6 @@ impl Mul<Mat4> for f32 {
     }
 }
 
-impl std::ops::Mul<Mat4>  for Vec4f {
-    type Output = Vec4f;
-    fn mul(self, rhs: Mat4) -> Vec4f {
-        let mut ret = Vec4f::zero();
-        for i in 0..4 {
-            for j in 0..4 {
-                ret[i] += rhs.at(i, j) * self[j];
-            }
-        }
-        ret    
-    } 
-}
 
 impl std::ops::Mul<Vec4f>  for Mat4 {
     type Output = Vec4f;

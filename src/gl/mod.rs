@@ -34,24 +34,31 @@ pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: TGAColor)
 #[allow(non_snake_case)]
 #[allow(dead_code)]
 fn barycentric(A: Vec3i, B: Vec3i, C: Vec3i, P: Vec3i) -> Vec3f {
-    let mut s = [Vec3f::zero();2];
+    let mut s = [Vec3i::zero();2];
     for i in 0..2 {
-        s[i][0] = C[i] as f32 - A[i] as f32;
-        s[i][1] = B[i] as f32 - A[i] as f32;
-        s[i][2] = A[i] as f32 - P[i] as f32;
+        s[i][0] = C[i] - A[i];
+        s[i][1] = B[i] - A[i];
+        s[i][2] = A[i] - P[i];
     }
     
-    let u = cross::<f32>(s[0], s[1]);
+    let u = cross::<f32>(s[0].cast::<f32>(), s[1].cast::<f32>());
     if u[2].abs() > 1e-2 {
         return Vec3f::new(1.0 - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
     }
     return Vec3f::new(-1.0, 1.0, 1.0)    
 }
 
-pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, zbuffer: &mut TGAImage) -> ((i32,i32),(i32,i32),usize) {
+// fn barycentric(points: &[Vec2i], point: Vec2i) -> Vec3f {
+//     let u = cross(Vec3f::new(points[2][0]-points[0][0], points[1][0]-points[0][0], points[0][0]-point[0]), Vec3f::new(points[2][1]-points[0][1], points[1][1]-points[0][1], points[0][1]-point[1])); 
+//     if u[2].abs() < 1.0 { return Vec3f::new(-1.0,1.0,1.0); } // triangle is degenerate, in this case return smth with negative coordinates 
+//     let ret = Vec3f::new(1.0 - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
+//     return ret
+// }
+
+pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, zbuffer: &mut TGAImage) -> usize {
     let mut bboxmin = Vec2i::new(std::i32::MAX, std::i32::MAX);
     let mut bboxmax = Vec2i::new(std::i32::MIN, std::i32::MIN);
-    let mut count = 0;
+    let mut ret = 0;
     for i in 0..3 {
         bboxmin[0] = std::cmp::min(bboxmin[0], pts[i][0]);
         bboxmax[0] = std::cmp::max(bboxmax[0], pts[i][0]);    
@@ -61,6 +68,7 @@ pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, 
     let mut p = Vec3i::new(bboxmin.x, bboxmin.y, 0);
     let mut color = TGAColor::new();
     while p.x <= bboxmax.x {
+        p.y = bboxmin.y;
         while p.y <= bboxmax.y {
             let c = barycentric(pts[0], pts[1], pts[2], p);
             p.z = 0.0.max(255.0.min((pts[0].z as f32 * c.x + pts[1].z as f32 * c.y + pts[2].z as f32 * c.z + 0.5))) as i32;
@@ -72,13 +80,13 @@ pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, 
             if !discard {
                 zbuffer.set(p.x, p.y, TGAColor::grayscale(p.z as u8));
                 image.set(p.x, p.y, color);
-                count += 1;
+                ret += 1;
             }
             p.y += 1;
         }
         p.x += 1;    
     }
-    ((bboxmin.x,bboxmin.y),(bboxmax.x,bboxmax.y),count)
+    ret
 }
 
 #[allow(dead_code)]
@@ -89,12 +97,12 @@ pub struct Camera {
     pub light_dir: Vec3f,
 }
 
-pub static mut CameraOne: Camera = Camera {
-    modelview: Mat4 { mat: [0f32;16] },
-    viewport: Mat4 { mat: [0f32;16] },
-    projection: Mat4 { mat: [0f32;16] },
-    light_dir: Vec3f { x: 1.0, y: 1.0, z: 1.0 }
-};
+// pub static mut CameraOne: Camera = Camera {
+//     modelview: Mat4 { mat: [0f32;16] },
+//     viewport: Mat4 { mat: [0f32;16] },
+//     projection: Mat4 { mat: [0f32;16] },
+//     light_dir: Vec3f { x: 1.0, y: 1.0, z: 1.0 }
+// };
 
 
 impl Camera {

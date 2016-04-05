@@ -189,7 +189,7 @@ impl TGAColor {
     #[allow(dead_code)]
     pub fn set_val(&mut self, val: u32, bytespp: usize) {
         let raw = unsafe { std::mem::transmute::<u32, [u8; 4]>(val) };
-
+        
         for i in 0..bytespp {
             self[i] = raw[i];
         }
@@ -247,7 +247,7 @@ impl std::ops::Mul<f32> for TGAColor {
         let rhs = if rhs > 1.0 { 1.0 } 
                   else if rhs < 0.0 { 0.0 }
                   else { rhs };
-        for i in 0..3 {
+        for i in 0..4 {
             ret[i] = (ret[i] as f32 * rhs) as u8; 
         }
         ret
