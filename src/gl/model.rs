@@ -31,8 +31,8 @@ fn solver(x: &&str, faces: &mut Vec<Vec<Vec3i>>, verts: &mut Vec<Vec3f>, norms: 
         
         for x in face_info {
             if x.find("f") != None { continue }
-            let single = x.split("/").map(|x| x.trim().parse::<i32>().unwrap() - 1).collect();
-            let tmp = Vec3i::from_vec(&single);
+            let single: Vec<i32> = x.split("/").map(|x| x.trim().parse::<i32>().unwrap() - 1).collect();
+            let tmp = Vec3i::from_vec(&single[0..]); //TODO: need to refator
             face_vec.push(tmp);
         }
         faces.push(face_vec);

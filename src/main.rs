@@ -33,6 +33,7 @@ fn main() {
     CameraOne.light_dir = CameraOne.light_dir.normalize();
     
     let mut shader = gl::GourauShader::new();
+    
     for i in 0..model.nfaces() {
         let mut screen_coords = [Vec3i::zero();3];
         for j in 0..3 {
@@ -48,3 +49,6 @@ fn main() {
     
     println!("Finished");
 }
+
+
+
