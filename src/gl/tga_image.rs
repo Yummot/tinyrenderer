@@ -178,9 +178,9 @@ impl TGAColor {
     #[allow(dead_code)]
     pub fn grayscale(val: u8) -> TGAColor {
         TGAColor {
-            r: val,
+            r: 0,
             g: 0,
-            b: 0,
+            b: val,
             a: 0,
             bytespp: 1,
         }
