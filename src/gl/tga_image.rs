@@ -1,11 +1,9 @@
-extern crate num;
-
 use std;
 use std::io::prelude::*;
 use std::fs::File;
 use std::ptr::copy as memmove;
 use std::ptr::copy_nonoverlapping as memcpy;
-use self::num::{Num, NumCast, cast};
+use gl::num::{Num, NumCast, cast};
 
 // pub trait Image {}
 // impl Image for TGAImage{}

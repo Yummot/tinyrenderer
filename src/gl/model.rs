@@ -2,8 +2,8 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use super::geometry::*;
-use super::tga_image::*;
+use gl::geometry::*;
+use gl::tga_image::*;
 
 #[derive(Debug,Clone)]
 pub struct Model {
@@ -157,8 +157,6 @@ impl Model {
     pub fn face_normal(&mut self, iface: i32, nthvert: i32) -> Vec3f {
         let idx = self.faces_[iface as usize][nthvert as usize][2] as usize;
         self.norms_[idx] = self.norms_[idx].normalize();
-        let mut test = self.norms_[idx];
-        test = test * 1;
         return self.norms_[idx];
     }
 }

@@ -1,4 +1,4 @@
-use super::*;
+use gl::*;
 pub trait Shader {
     fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model, iface: i32, nthvert: i32) -> Vec3i;
     fn fragment(&self, bar: Vec3f, color: &mut TGAColor) -> bool;
@@ -33,8 +33,13 @@ impl Shader for GourauShader {
     fn fragment(&self, bar: Vec3f, color: &mut TGAColor) -> bool {
         let intensity = self.vary_intensity * bar;
         *color = TGAColor::with_color(RGBAColor(255, 255, 255, 255)) * intensity; 
-        if color.red() == 0 && color.green() == 0 && color.blue() == 0 { print!("z "); }
         false
     } 
+}
+
+#[allow(dead_code)]
+pub struct ToonShader {
+    vary_intensity: Vec3f,
+    vary_mat3: Mat,
 }
 

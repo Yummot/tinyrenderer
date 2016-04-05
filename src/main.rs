@@ -1,11 +1,12 @@
 #[macro_use]
 mod gl;
 pub use gl::*;
-use std::io::prelude::*;
+// use std::io::prelude::*;
 #[cfg(test)]
 mod tests;
 
-#[allow(unused_variables)]
+
+#[allow(non_snake_case)]
 fn main() {
     let width: i32= 800;
     let height: i32= 800;
@@ -23,7 +24,6 @@ fn main() {
     
     let mut image = gl::TGAImage::with_info(width as isize, height as isize, tga_image::RGB);
     let mut zbuffer = gl::TGAImage::with_info(width as isize, height as isize, tga_image::GRAYSCALE);
-    let mut count = vec![];
     
     let mut CameraOne = Camera::new();
     CameraOne.set_light_dir(Vec3f::new(1,1,1));
@@ -38,17 +38,13 @@ fn main() {
         for j in 0..3 {
             screen_coords[j] = shader.vertex(&CameraOne, &mut model, i as i32, j as i32); 
         }
-        count.push(gl::triangle(&mut screen_coords, &mut shader, &mut image, &mut zbuffer));
+        gl::triangle(&mut screen_coords, &mut shader, &mut image, &mut zbuffer);
     }
     
     image.flip_vertically().unwrap();
     image.write_tga_file("output.tga", tga_image::WRITE_RLE_FILE).unwrap();
     zbuffer.flip_vertically().unwrap();
     zbuffer.write_tga_file("zbuffer.tga", tga_image::WRITE_RLE_FILE).unwrap();
-    println!("{:?}",count);
-    // let mut file = std::fs::File::create("debug_color.info").unwrap();
-    // for i in 0..count.len() {
-    //     file.write_fmt(format_args!("{:?}\r\n", count[i])).unwrap();
-    // }
+    
     println!("Finished");
 }

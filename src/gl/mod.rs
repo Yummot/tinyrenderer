@@ -8,6 +8,7 @@ pub use self::geometry::*;
 pub use self::model::*;
 pub use self::shader::*;
 use super::std;
+extern crate num;
 
 #[allow(dead_code)]
 pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: TGAColor) {
@@ -55,10 +56,10 @@ fn barycentric(A: Vec3i, B: Vec3i, C: Vec3i, P: Vec3i) -> Vec3f {
 //     return ret
 // }
 
-pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, zbuffer: &mut TGAImage) -> usize {
+pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, zbuffer: &mut TGAImage) {
     let mut bboxmin = Vec2i::new(std::i32::MAX, std::i32::MAX);
     let mut bboxmax = Vec2i::new(std::i32::MIN, std::i32::MIN);
-    let mut ret = 0;
+    
     for i in 0..3 {
         bboxmin[0] = std::cmp::min(bboxmin[0], pts[i][0]);
         bboxmax[0] = std::cmp::max(bboxmax[0], pts[i][0]);    
@@ -80,13 +81,11 @@ pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, 
             if !discard {
                 zbuffer.set(p.x, p.y, TGAColor::grayscale(p.z as u8));
                 image.set(p.x, p.y, color);
-                ret += 1;
             }
             p.y += 1;
         }
         p.x += 1;    
     }
-    ret
 }
 
 #[allow(dead_code)]
