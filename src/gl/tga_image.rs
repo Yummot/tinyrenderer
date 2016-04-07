@@ -62,6 +62,7 @@ pub struct TGAColor {
     pub a: u8,
 }
 
+
 pub struct RGBAColor(pub u8, pub u8, pub u8, pub u8);
 
 

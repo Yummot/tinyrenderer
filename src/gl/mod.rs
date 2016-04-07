@@ -2,6 +2,7 @@
 pub mod geometry;
 pub mod model;
 pub mod tga_image;
+pub mod color;
 pub mod shader;
 pub use self::tga_image::*;
 pub use self::geometry::*;
@@ -9,6 +10,11 @@ pub use self::model::*;
 pub use self::shader::*;
 use super::std;
 extern crate num;
+
+pub trait Cast {
+    type Output;
+    fn cast<T>(&self) -> Self::Output;
+}
 
 #[allow(dead_code)]
 pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: TGAColor) {
