@@ -16,9 +16,9 @@ impl ColorType {
     pub fn get_bgra_value(&self) -> u32 {
         use color::ColorType::*;
         match self {
-            &GRAY(g) => g as u32,
-            &RGB(r, g, b) => (b as u32) << 16 + (g as u32) << 8 + (r as u32),  
-            &RGBA(r, g, b, a) => (b as u32) << 24 | (r as u32) << 16 | (g as u32) << 8 | (a as u32),
+            &GRAY(gray) => gray as u32,
+            &RGB(r, g, b) => (b as u32) << 24 | (g as u32) << 16 | (r as u32) << 8,  
+            &RGBA(r, g, b, a) => (b as u32) << 24 | (g as u32) << 16 | (r as u32) << 8 | (a as u32),
             &None => 0,
             &VALUE(v) => v,  
         }    
@@ -28,6 +28,7 @@ impl ColorType {
             ColorType::None => 0,
             ColorType::GRAY(_) => 1, 
             ColorType::RGB(..) => 3,
+            ColorType::RGBA(..) => 4,
             _ => 0,
         } 
     }
@@ -42,17 +43,17 @@ impl Index<usize> for ColorType {
             },
             &ColorType::RGB(ref r, ref g, ref b) => {
                 match idx {
-                    0 => r,
+                    0 => b,
                     1 => g,
-                    2 => b,
+                    2 => r,
                     _ => panic!("Error: ColorType::RGB index {} is out of bounds.", idx),     
                 }
             },
             &ColorType::RGBA(ref r, ref g, ref b, ref a) => {
                 match idx {
-                    0 => r,
+                    0 => b,
                     1 => g,
-                    2 => b,
+                    2 => r,
                     3 => a,
                     _ => panic!("Error: ColorType::RGBA index {} is out of bounds.", idx),    
                 }
@@ -108,8 +109,8 @@ impl Color {
         let tmp = unsafe { transmute::<u32,[u8;4]>(val) };
         match bytespp {
             1 => self.color = GRAY(tmp[0]),
-            3 => self.color = RGB(tmp[0], tmp[1], tmp[2]),
-            4 => self.color = RGBA(tmp[0], tmp[1], tmp[2], tmp[3]),  
+            3 => self.color = RGB(tmp[2], tmp[1], tmp[0]),
+            4 => self.color = RGBA(tmp[2], tmp[1], tmp[0], tmp[3]),  
             _ => {},   
         };
     }
