@@ -7,7 +7,6 @@ pub enum ColorType {
     VALUE(u32),
     None,
 }
-pub use self::ColorType::*;
 pub use self::ColorType::RGBA as RGBAColor;
 
 impl ColorType {
@@ -97,14 +96,16 @@ impl Color {
     #[allow(dead_code)] pub fn new() -> Color { Color { color: ColorType::None } }
     #[allow(dead_code)] pub fn with_color(color: ColorType) -> Color { Color { color: color } }
     #[allow(dead_code)] pub fn grayscale(gray: u8) -> Color { Color { color: ColorType::GRAY(gray) } }
-    #[allow(dead_code)] pub fn red(&self) -> u8 { self.color[2] }
-    #[allow(dead_code)] pub fn green(&self) -> u8 { self.color[1] }
-    #[allow(dead_code)] pub fn blue(&self) -> u8 { self.color[0] }
-    #[allow(dead_code)] pub fn alpha(&self) -> u8 { self.color[3] }
-    #[allow(dead_code)] pub fn set_red(&mut self, r: u8) { self.color[2] = r; }
-    #[allow(dead_code)] pub fn set_green(&mut self, g: u8) { self.color[1] = g; }
-    #[allow(dead_code)] pub fn set_blue(&mut self, b: u8) { self.color[0] = b; }
-    #[allow(dead_code)] pub fn set_alpha(&mut self,a: u8) { self.color[3] = a; }
+    #[allow(dead_code)] pub fn val(&self) -> u32 { self.color.get_bgra_value() }
+    #[allow(dead_code)] pub fn raw(&self) -> [u8;4] { std::mem::transmute::<u32,[u8;4]>(self.color.get_bgra_value()) }
+    // #[allow(dead_code)] pub fn red(&self) -> u8 { self.color[2] }
+    // #[allow(dead_code)] pub fn green(&self) -> u8 { self.color[1] }
+    // #[allow(dead_code)] pub fn blue(&self) -> u8 { self.color[0] }
+    // #[allow(dead_code)] pub fn alpha(&self) -> u8 { self.color[3] }
+    // #[allow(dead_code)] pub fn set_red(&mut self, r: u8) { self.color[2] = r; }
+    // #[allow(dead_code)] pub fn set_green(&mut self, g: u8) { self.color[1] = g; }
+    // #[allow(dead_code)] pub fn set_blue(&mut self, b: u8) { self.color[0] = b; }
+    // #[allow(dead_code)] pub fn set_alpha(&mut self,a: u8) { self.color[3] = a; }
     #[allow(dead_code)] pub fn nbytes(&self) -> usize { self.color.nbytes() }
 }
 
