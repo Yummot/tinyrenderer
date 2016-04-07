@@ -104,9 +104,18 @@ impl Color {
     pub fn set_val(&mut self, val: u32, bytespp: i32) {
         let tmp = unsafe { transmute::<u32,[u8;4]>(val) };
         match bytespp {
-            1 => self.color = GRAY(val[])     
+            1 => self.color = GRAY(val[0])
+            3 => self.color = RGBA(val[0], val[1], val[2])
+            4 => self.color = RGBA(val[0], val[1], val[2], val[3])     
         }
     }
+    
+    pub fn set_val(&mut self, val: u32, bytespp: usize) {
+        let raw = unsafe { std::mem::transmute::<u32, [u8; 4]>(val) };
+        
+        for i in 0..bytespp {
+            self[i] = raw[i];
+        }
 }
 
 impl Index<usize> for Color {
