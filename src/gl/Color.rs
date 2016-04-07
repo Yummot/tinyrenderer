@@ -8,7 +8,9 @@ pub enum ColorType {
     VALUE(u32),
     None,
 }
-pub use self::ColorType::RGBA as RGBAColor;
+pub use self::ColorType::GRAY;
+pub use self::ColorType::RGB as RGBColor;
+pub use self::ColorType::RGBA as RGBAColor; 
 
 impl ColorType {
     pub fn get_bgra_value(&self) -> u32 {
@@ -16,7 +18,7 @@ impl ColorType {
         match self {
             &GRAY(g) => g as u32,
             &RGB(r, g, b) => (b as u32) << 16 + (g as u32) << 8 + (r as u32),  
-            &RGBA(r, g, b, a) => (b as u32) << 24 + (r as u32) << 16 + (g as u32) << 8 +(a as u32),
+            &RGBA(r, g, b, a) => (b as u32) << 24 | (r as u32) << 16 | (g as u32) << 8 | (a as u32),
             &None => 0,
             &VALUE(v) => v,  
         }    
@@ -98,24 +100,19 @@ impl Color {
     #[allow(dead_code)] pub fn with_color(color: ColorType) -> Color { Color { color: color } }
     #[allow(dead_code)] pub fn grayscale(gray: u8) -> Color { Color { color: ColorType::GRAY(gray) } }
     #[allow(dead_code)] pub fn val(&self) -> u32 { self.color.get_bgra_value() }
-    #[allow(dead_code)] pub fn raw(&self) -> [u8;4] { unsafe { transmute::<u32,[u8;4]>(self.color.get_bgra_value()) } 
+    #[allow(dead_code)] pub fn raw(&self) -> [u8;4] { unsafe { transmute::<u32,[u8;4]>(self.color.get_bgra_value()) } } 
     #[allow(dead_code)] pub fn nbytes(&self) -> usize { self.color.nbytes() }
     #[allow(dead_code)]
     pub fn set_val(&mut self, val: u32, bytespp: i32) {
+        use color::ColorType::*;
         let tmp = unsafe { transmute::<u32,[u8;4]>(val) };
         match bytespp {
-            1 => self.color = GRAY(val[0])
-            3 => self.color = RGBA(val[0], val[1], val[2])
-            4 => self.color = RGBA(val[0], val[1], val[2], val[3])     
-        }
+            1 => self.color = GRAY(tmp[0]),
+            3 => self.color = RGB(tmp[0], tmp[1], tmp[2]),
+            4 => self.color = RGBA(tmp[0], tmp[1], tmp[2], tmp[3]),  
+            _ => {},   
+        };
     }
-    
-    pub fn set_val(&mut self, val: u32, bytespp: usize) {
-        let raw = unsafe { std::mem::transmute::<u32, [u8; 4]>(val) };
-        
-        for i in 0..bytespp {
-            self[i] = raw[i];
-        }
 }
 
 impl Index<usize> for Color {
