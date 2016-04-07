@@ -4,6 +4,7 @@ use std::fs::File;
 use std::ptr::copy as memmove;
 use std::ptr::copy_nonoverlapping as memcpy;
 use gl::num::{Num, NumCast, cast};
+use gl::color::*;
 
 // pub trait Image {}
 // impl Image for TGAImage{}
@@ -62,8 +63,6 @@ pub struct TGAColor {
     pub a: u8,
 }
 
-pub struct RGBAColor(pub u8, pub u8, pub u8, pub u8);
-
 
 #[allow(dead_code)]
 pub fn u32_from_be(buf: &[u8]) -> u32 {
@@ -92,163 +91,6 @@ pub fn u32_from_le(buf: &[u8]) -> u32 {
         buf[0] as u32
     } else {
         panic!("Error: tga_image::base::u32_from_le bad buf parameter.")
-    }
-}
-
-impl TGAColor {
-    #[allow(dead_code)]
-    pub fn new() -> TGAColor {
-        TGAColor {
-            r: 0,
-            g: 0,
-            b: 0,
-            a: 0,
-            bytespp: 0,
-        }
-    }
-    #[allow(dead_code)]
-    pub fn with_color(rgba: RGBAColor) -> TGAColor {
-        TGAColor {
-            bytespp: RGBA as u32,
-            b: rgba.2,
-            g: rgba.1,
-            r: rgba.0,
-            a: rgba.3,
-        }
-    }
-
-
-    #[inline]
-    #[allow(dead_code)]
-    pub fn raw(&self) -> [u8; 4] {
-        [self.b, self.g, self.r, self.a]
-    }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn set(&mut self, bgra: &[u8], bytespp: usize) -> Option<()> {
-        if bytespp > 4 {
-            None
-        } else {
-            for i in 0..bytespp {
-                self[i] = bgra[i];
-            }
-            self.bytespp = bytespp as u32;
-            Some(())
-        }
-    }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn red(&self) -> u8 { self.r }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn green(&self) -> u8 { self.g }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn blue(&self) -> u8 { self.b }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn alpha(&self) -> u8 { self.a }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn set_red(&mut self, r: u8) { self.r = r; }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn set_green(&mut self, g: u8) { self.g = g; }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn set_blue(&mut self, b: u8) { self.b = b; }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn set_alpha(&mut self, alpha: u8) { self.a = alpha; }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn val(&self) -> u32 {
-        unsafe { std::mem::transmute::<[u8; 4], u32>(self.raw()) }
-    }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn from_val(val: u32) -> TGAColor {
-        let mut ret = TGAColor::new();
-        ret.set_val(val, 4);
-        ret
-    }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn grayscale(val: u8) -> TGAColor {
-        TGAColor {
-            r: 0,
-            g: 0,
-            b: val,
-            a: 0,
-            bytespp: 1,
-        }
-    }
-    #[inline]
-    #[allow(dead_code)]
-    pub fn set_val(&mut self, val: u32, bytespp: usize) {
-        let raw = unsafe { std::mem::transmute::<u32, [u8; 4]>(val) };
-        
-        for i in 0..bytespp {
-            self[i] = raw[i];
-        }
-
-        self.bytespp = match bytespp {
-            1 => 1,
-            3 => 3,
-            4 => 4,
-            _ => panic!("ERROR: TGAColor::set_val: Bad bytespp value."),
-        };
-    }
-}
-
-impl ::std::ops::IndexMut<usize> for TGAColor {
-    fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut u8 {
-        match index {
-            0 => &mut self.b,
-            1 => &mut self.g,
-            2 => &mut self.r,
-            3 => &mut self.a,
-            _ => panic!("Error: Out of bounds while indexing RGBAColor."),
-        }
-    }
-}
-
-// impl ::std::ops::IndexMut<char> for TGAColor {
-//     fn index_mut<'a>(&'a mut self, index: char) -> &'a mut u8 {
-//         match index {
-//             'b' => &mut self.b,
-//             'g' => &mut self.g,
-//             'r' => &mut self.r,
-//             'a' => &mut self.a,
-//             _ => panic!("Error: Out of bounds while indexing RGBAColor.")
-//         }
-//     }
-// }
-
-impl ::std::ops::Index<usize> for TGAColor {
-    type Output = u8;
-    fn index<'a>(&'a self, index: usize) -> &'a u8 {
-        match index {
-            0 => &self.b,
-            1 => &self.g,
-            2 => &self.r,
-            3 => &self.a,
-            _ => panic!("Error: Out of bounds while indexing RGBAColor."),
-        }
-    }
-}
-
-impl std::ops::Mul<f32> for TGAColor {
-    type Output = TGAColor;
-    fn mul(self, rhs: f32) -> TGAColor {
-        let mut ret = self;
-        let rhs = if rhs > 1.0 { 1.0 } 
-                  else if rhs < 0.0 { 0.0 }
-                  else { rhs };
-        for i in 0..4 {
-            ret[i] = (ret[i] as f32 * rhs) as u8; 
-        }
-        ret
     }
 }
 
@@ -578,25 +420,25 @@ impl TGAImage {
     }
 
     #[allow(dead_code)]
-    pub fn get<X, Y>(&self, x: X, y: Y) -> TGAColor
+    pub fn get<X, Y>(&self, x: X, y: Y) -> Color
         where X: Num + Copy + NumCast, Y: Num + Copy + NumCast
     {
         let x = cast::<X, usize>(x).unwrap();
         let y = cast::<Y, usize>(y).unwrap();
         if self.data.is_empty() || x >= self.width as usize || y >= self.height as usize {
             // return Err("Warning: x (y, x > width, y > height, or no data to get TGAColor.");
-            return TGAColor::new();
+            return Color::with_color(ColorType::RGBA(0,0,0,0));
         }
-        let mut ret = TGAColor::new();
+        let mut ret = Color::new();
         let raw_val = u32_from_le(
             &self.data[((x + y * self.width as usize) * self.bytespp as usize)..((x + y * self.width as usize) * self.bytespp as usize + self.bytespp as usize)]
             );
-        ret.set_val(raw_val, self.bytespp as usize);
+        ret.set_val(raw_val, self.bytespp);
         return ret;
     }
 
     #[allow(dead_code)]
-    pub fn set<X, Y>(&mut self, x: X, y: Y, color: TGAColor) -> bool
+    pub fn set<X, Y>(&mut self, x: X, y: Y, color: Color) -> bool
         where X: Num + Copy + NumCast, Y: Num + Copy + NumCast
     {
         let x = cast::<X, usize>(x).unwrap();

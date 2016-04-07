@@ -3,6 +3,7 @@ use std::iter::{FromIterator, IntoIterator};
 use std::slice::Iter;
 pub use gl::num::*;
 use gl::num;
+use gl::Cast;
 
 pub trait Vector: std::ops::Index<usize> 
                     + std::ops::Add 
@@ -18,11 +19,6 @@ pub trait Norm {
     type Normalize;
     fn norm(&self) -> Self::Output;
     fn normalize(&self) -> Self::Normalize;
-}
-
-pub trait Cast {
-    type Output;
-    fn cast<T>(&self) -> Self::Output;
 }
 
 macro_rules! sum {
@@ -233,82 +229,40 @@ impl<T> ::std::ops::IndexMut<usize> for Vec3<T> {
 macro_rules! vec_impl_helper {
     ($($dst : ident > ( $($attr_name : ident)*) ;)*) => (
         $(
-            impl<T> Mul<$dst<T>> for $dst<T>
-                where T: Clone + Mul<Output = T> + Add<Output = T> + Num
+            impl<T> Mul<$dst<T>> for $dst<T> where T: Clone + Mul<Output = T> + Add<Output = T> + Num
             {
                 type Output = T;
-                #[allow(dead_code)]
-                fn mul(self, rhs: Self) -> T {
-                    sum!($(self.$attr_name * rhs.$attr_name),*) 
-                }
+                fn mul(self, rhs: Self) -> T { sum!($(self.$attr_name * rhs.$attr_name),*)  }
             }
             
-            impl<T> Mul<f32> for $dst<T>
-               where T: NumCast + Num + Copy + Mul<Output = T> {
+            impl<T> Mul<f32> for $dst<T> where T: NumCast + Num + Copy + Mul<Output = T> {
                 type Output = $dst<T>;
-                fn mul(self, rhs: f32) -> $dst<T> {
-                    $dst {
-                        $(
-                            $attr_name: cast::<f32,T>(cast::<T,f32>(self.$attr_name).unwrap() * rhs).unwrap(),
-                        )*
-                    }
-                }
+                fn mul(self, rhs: f32) -> $dst<T> { $dst { $( $attr_name: cast::<f32,T>(cast::<T,f32>(self.$attr_name).unwrap() * rhs).unwrap(), )* } }
             }
             
-            impl<T> Mul<f64> for $dst<T>
-               where T: NumCast + Num + Copy + Mul<Output = T> {
+            impl<T> Mul<f64> for $dst<T> where T: NumCast + Num + Copy + Mul<Output = T> {
                 type Output = $dst<T>;
-                fn mul(self, rhs: f64) -> $dst<T> {
-                    $dst {
-                        $(
-                            $attr_name: cast::<f64,T>(cast::<T,f64>(self.$attr_name).unwrap() * rhs).unwrap(),
-                        )*
-                    }
-                }
+                fn mul(self, rhs: f64) -> $dst<T> { $dst { $(  $attr_name: cast::<f64,T>(cast::<T,f64>(self.$attr_name).unwrap() * rhs).unwrap(), )* } }
             }
             
-            impl<T> Mul<i32> for $dst<T>
-               where T: NumCast + Num + Copy + Mul<Output = T> {
+            impl<T> Mul<i32> for $dst<T> where T: NumCast + Num + Copy + Mul<Output = T> {
                 type Output = $dst<T>;
-                fn mul(self, rhs: i32) -> $dst<T> {
-                    $dst {
-                        $(
-                            $attr_name: cast::<i32,T>(cast::<T,i32>(self.$attr_name).unwrap() * rhs).unwrap(),
-                        )*
-                    }
-                }
+                fn mul(self, rhs: i32) -> $dst<T> { $dst { $( $attr_name: cast::<i32,T>(cast::<T,i32>(self.$attr_name).unwrap() * rhs).unwrap(), )* } }
             }
             
-            impl<T> Sub for $dst<T>
-                where T: Num + Clone + Sub<Output = T>
+            impl<T> Sub for $dst<T> where T: Num + Clone + Sub<Output = T>
             {
                 type Output = $dst<T>;
-                #[allow(dead_code)]
-                fn sub(self, rhs: Self) -> $dst<T> {
-                    $dst {
-                        $(
-                            $attr_name: self.$attr_name - rhs.$attr_name,
-                        )*
-                    }
-                }
+                fn sub(self, rhs: Self) -> $dst<T> { $dst { $( $attr_name: self.$attr_name - rhs.$attr_name, )* } }
             }
 
-            impl<T> Add for $dst<T>
-                where T: Num + Clone + Add<Output = T>
+            impl<T> Add for $dst<T> where T: Num + Clone + Add<Output = T>
             {
                 type Output = $dst<T>;
-                #[allow(dead_code)]
-                fn add(self, rhs: Self) -> $dst<T> {
-                    $dst {
-                        $(
-                            $attr_name: self.$attr_name + rhs.$attr_name,
-                        )*
-                    }
-                }
+                fn add(self, rhs: Self) -> $dst<T> { $dst { $( $attr_name: self.$attr_name + rhs.$attr_name, )* } }
             }
 
-            impl<T> PartialEq for $dst<T>
-                where T: PartialEq
+            impl<T> PartialEq for $dst<T> where T: PartialEq
             {
                 fn eq(&self, rhs: &Self) -> bool {
 // vec_eq!(self.x == rhs.x, self.y == rhs.y)
@@ -319,24 +273,15 @@ macro_rules! vec_impl_helper {
                 }
             }
 
-            impl<T> $dst<T> 
-               where T: Num + NumCast + Copy {
+            impl<T> $dst<T> where T: Num + NumCast + Copy {
                 #[allow(dead_code)]
-                pub fn new<N>($($attr_name : N),*) -> $dst<T>
-                    where N: Num + NumCast + Copy {
+                pub fn new<N>($($attr_name : N),*) -> $dst<T> where N: Num + NumCast + Copy {
                     $dst {
                         $($attr_name: num::cast::<N,T>($attr_name).unwrap(),)*
                     }
                 }
-                // #[allow(dead_code)]
-                // pub fn zero() -> $dst<T> {
-                //     $dst {
-                //         $($attr_name: num::cast::<u8,T>(0).unwrap(),)*
-                //     }
-                // }
                 #[allow(dead_code)]
-                pub fn from_vec<N>(v: &[N]) -> $dst<T> 
-                    where N: Num + NumCast + Copy {
+                pub fn from_vec<N>(v: &[N]) -> $dst<T> where N: Num + NumCast + Copy {
                     let mut ret = $dst::zero();
                     for i in 0..v.len() {
                         ret[i] = num::cast::<N,T>(v[i]).unwrap();
@@ -345,8 +290,7 @@ macro_rules! vec_impl_helper {
                 }
                 
                 #[allow(dead_code)]
-                pub fn check_add<N>(&self, rhs: &$dst<N>) -> Self
-                   where N: Num + NumCast + Copy, T: Num + NumCast + Copy {
+                pub fn check_add<N>(&self, rhs: &$dst<N>) -> Self where N: Num + NumCast + Copy, T: Num + NumCast + Copy {
                     $dst {
                         $(
                             $attr_name: num::cast::<f64, T>(
@@ -780,21 +724,21 @@ impl std::ops::Mul<Vec4f>  for Mat4 {
 
 
 
-impl std::fmt::Display for Mat4 {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        try!(write!(f, "["));
-        for i in 0..4 {
-            if i == 0 { try!(write!(f,"[")); }
-            else { try!(write!(f,"\n [")); }
-            for j in 0..3 {
-                try!(write!(f,"{}, ",self.at(i,j)));
-            }
-            try!(write!(f,"{}",self.at(i,3)));
-            try!(write!(f,"]"));            
-        }
-        write!(f, "]\n")
-    }
-}
+// impl std::fmt::Display for Mat4 {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         try!(write!(f, "["));
+//         for i in 0..4 {
+//             if i == 0 { try!(write!(f,"[")); }
+//             else { try!(write!(f,"\n [")); }
+//             for j in 0..3 {
+//                 try!(write!(f,"{}, ",self.at(i,j)));
+//             }
+//             try!(write!(f,"{}",self.at(i,3)));
+//             try!(write!(f,"]"));            
+//         }
+//         write!(f, "]\n")
+//     }
+// }
 
 impl std::ops::Index<(usize,usize)> for Mat4 {
     type Output = f32;

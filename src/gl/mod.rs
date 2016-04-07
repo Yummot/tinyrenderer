@@ -2,16 +2,23 @@
 pub mod geometry;
 pub mod model;
 pub mod tga_image;
+pub mod color;
 pub mod shader;
 pub use self::tga_image::*;
 pub use self::geometry::*;
 pub use self::model::*;
 pub use self::shader::*;
+pub use self::color::*;
 use super::std;
 extern crate num;
 
+pub trait Cast {
+    type Output;
+    fn cast<T>(&self) -> Self::Output;
+}
+
 #[allow(dead_code)]
-pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: TGAColor) {
+pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: Color) {
      let mut steep = false;
      if (p0.x - p1.x).abs() < (p0.y - p1.y).abs() {
          std::mem::swap(&mut p0.x, &mut p0.y);
@@ -67,7 +74,7 @@ pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, 
         bboxmax[1] = std::cmp::max(bboxmax[1], pts[i][1]);  
     }
     let mut p = Vec3i::new(bboxmin.x, bboxmin.y, 0);
-    let mut color = TGAColor::new();
+    let mut color = Color::new();
     while p.x <= bboxmax.x {
         p.y = bboxmin.y;
         while p.y <= bboxmax.y {
@@ -79,7 +86,7 @@ pub fn triangle<S: Shader>(pts: &mut [Vec3i], shader: &S, image: &mut TGAImage, 
             }
             let discard = shader.fragment(c, &mut color);
             if !discard {
-                zbuffer.set(p.x, p.y, TGAColor::grayscale(p.z as u8));
+                zbuffer.set(p.x, p.y, Color::grayscale(p.z as u8));
                 image.set(p.x, p.y, color);
             }
             p.y += 1;

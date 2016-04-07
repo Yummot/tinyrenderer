@@ -1,7 +1,8 @@
 use gl::*;
+
 pub trait Shader {
     fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model, iface: i32, nthvert: i32) -> Vec3i;
-    fn fragment(&self, bar: Vec3f, color: &mut TGAColor) -> bool;
+    fn fragment(&self, bar: Vec3f, color: &mut Color) -> bool;
 }
 
 #[allow(dead_code)]
@@ -30,9 +31,9 @@ impl Shader for GourauShader {
         self.vary_intensity[nthvert as usize] = clamp;
         (gl_vertex / gl_vertex[3]).proj().cast::<i32>()
     }
-    fn fragment(&self, bar: Vec3f, color: &mut TGAColor) -> bool {
+    fn fragment(&self, bar: Vec3f, color: &mut Color) -> bool {
         let intensity = self.vary_intensity * bar;
-        *color = TGAColor::with_color(RGBAColor(255, 255, 255, 255)) * intensity; 
+        *color = Color::with_color(RGBAColor(255, 255, 255, 255)) * intensity; 
         false
     } 
 }
@@ -59,14 +60,14 @@ impl Shader for ToonShader {
         gl_vertex = camera.viewport * gl_vertex;
         (gl_vertex / gl_vertex[3]).proj().cast::<i32>()
     }
-    fn fragment(&self, bar: Vec3f, color: &mut TGAColor) -> bool {
+    fn fragment(&self, bar: Vec3f, color: &mut Color) -> bool {
         let mut intensity = self.vary_intensity * bar;
         if intensity > 0.85 { intensity = 1.0; }
         else if intensity > 0.60 { intensity = 0.80; }
         else if intensity > 0.45 { intensity = 0.60; }
         else if intensity > 0.30 { intensity = 0.45; }
         else if intensity > 0.15 { intensity = 0.30; } 
-        *color = TGAColor::with_color(RGBAColor(255,255,255,255)) * intensity;
+        *color = Color::with_color(RGBAColor(255,255,255,255)) * intensity;
         false 
     }    
 }
@@ -94,10 +95,10 @@ impl Shader for FlatShader {
         (gl_vertex / gl_vertex[3]).proj().cast::<i32>()
     }
     #[allow(unused_variables)]
-    fn fragment(&self, bar: Vec3f, color: &mut TGAColor) -> bool {
+    fn fragment(&self, bar: Vec3f, color: &mut Color) -> bool {
         let n = cross(Vec3f::from_vec(&self.vary_mat3[1]) - Vec3f::from_vec(&self.vary_mat3[0]), Vec3f::from_vec(&self.vary_mat3[2]) - Vec3f::from_vec(&self.vary_mat3[0])).normalize();
         let intensity = clamp!(n * self.light_dir, 0.0, 1.0);
-        *color = TGAColor::with_color(RGBAColor(255,255,255,255)) * intensity;
+        *color = Color::with_color(RGBAColor(255,255,255,255)) * intensity;
         false 
     }    
 }
