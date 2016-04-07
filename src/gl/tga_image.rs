@@ -4,6 +4,7 @@ use std::fs::File;
 use std::ptr::copy as memmove;
 use std::ptr::copy_nonoverlapping as memcpy;
 use gl::num::{Num, NumCast, cast};
+use gl::color::*;
 
 // pub trait Image {}
 // impl Image for TGAImage{}
@@ -419,25 +420,25 @@ impl TGAImage {
     }
 
     #[allow(dead_code)]
-    pub fn get<X, Y>(&self, x: X, y: Y) -> TGAColor
+    pub fn get<X, Y>(&self, x: X, y: Y) -> Color
         where X: Num + Copy + NumCast, Y: Num + Copy + NumCast
     {
         let x = cast::<X, usize>(x).unwrap();
         let y = cast::<Y, usize>(y).unwrap();
         if self.data.is_empty() || x >= self.width as usize || y >= self.height as usize {
             // return Err("Warning: x (y, x > width, y > height, or no data to get TGAColor.");
-            return Color::with();
+            return Color::with_color(ColorType::RGBA(0,0,0,0));
         }
         let mut ret = Color::new();
         let raw_val = u32_from_le(
             &self.data[((x + y * self.width as usize) * self.bytespp as usize)..((x + y * self.width as usize) * self.bytespp as usize + self.bytespp as usize)]
             );
-        ret.set_val(raw_val, self.bytespp as usize);
+        ret.set_val(raw_val, self.bytespp);
         return ret;
     }
 
     #[allow(dead_code)]
-    pub fn set<X, Y>(&mut self, x: X, y: Y, color: TGAColor) -> bool
+    pub fn set<X, Y>(&mut self, x: X, y: Y, color: Color) -> bool
         where X: Num + Copy + NumCast, Y: Num + Copy + NumCast
     {
         let x = cast::<X, usize>(x).unwrap();

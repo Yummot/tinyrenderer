@@ -18,7 +18,7 @@ pub trait Cast {
 }
 
 #[allow(dead_code)]
-pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: TGAColor) {
+pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: Color) {
      let mut steep = false;
      if (p0.x - p1.x).abs() < (p0.y - p1.y).abs() {
          std::mem::swap(&mut p0.x, &mut p0.y);

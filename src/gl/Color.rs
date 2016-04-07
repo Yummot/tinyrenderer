@@ -1,4 +1,5 @@
 use std::ops::{IndexMut, Index, Mul};
+use std::mem::transmute;
 #[derive(Debug, Clone, Copy)]
 pub enum ColorType {
     GRAY(u8),
@@ -89,7 +90,7 @@ impl IndexMut<usize> for ColorType {
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
-struct Color {
+pub struct Color {
     color: ColorType,
 }
 impl Color {
@@ -97,16 +98,15 @@ impl Color {
     #[allow(dead_code)] pub fn with_color(color: ColorType) -> Color { Color { color: color } }
     #[allow(dead_code)] pub fn grayscale(gray: u8) -> Color { Color { color: ColorType::GRAY(gray) } }
     #[allow(dead_code)] pub fn val(&self) -> u32 { self.color.get_bgra_value() }
-    #[allow(dead_code)] pub fn raw(&self) -> [u8;4] { std::mem::transmute::<u32,[u8;4]>(self.color.get_bgra_value()) }
-    // #[allow(dead_code)] pub fn red(&self) -> u8 { self.color[2] }
-    // #[allow(dead_code)] pub fn green(&self) -> u8 { self.color[1] }
-    // #[allow(dead_code)] pub fn blue(&self) -> u8 { self.color[0] }
-    // #[allow(dead_code)] pub fn alpha(&self) -> u8 { self.color[3] }
-    // #[allow(dead_code)] pub fn set_red(&mut self, r: u8) { self.color[2] = r; }
-    // #[allow(dead_code)] pub fn set_green(&mut self, g: u8) { self.color[1] = g; }
-    // #[allow(dead_code)] pub fn set_blue(&mut self, b: u8) { self.color[0] = b; }
-    // #[allow(dead_code)] pub fn set_alpha(&mut self,a: u8) { self.color[3] = a; }
+    #[allow(dead_code)] pub fn raw(&self) -> [u8;4] { unsafe { transmute::<u32,[u8;4]>(self.color.get_bgra_value()) } 
     #[allow(dead_code)] pub fn nbytes(&self) -> usize { self.color.nbytes() }
+    #[allow(dead_code)]
+    pub fn set_val(&mut self, val: u32, bytespp: i32) {
+        let tmp = unsafe { transmute::<u32,[u8;4]>(val) };
+        match bytespp {
+            1 => self.color = GRAY(val[])     
+        }
+    }
 }
 
 impl Index<usize> for Color {
@@ -128,3 +128,13 @@ impl Mul<f32> for Color {
         ret
     }    
 }
+
+
+// #[allow(dead_code)] pub fn red(&self) -> u8 { self.color[2] }
+// #[allow(dead_code)] pub fn green(&self) -> u8 { self.color[1] }
+// #[allow(dead_code)] pub fn blue(&self) -> u8 { self.color[0] }
+// #[allow(dead_code)] pub fn alpha(&self) -> u8 { self.color[3] }
+// #[allow(dead_code)] pub fn set_red(&mut self, r: u8) { self.color[2] = r; }
+// #[allow(dead_code)] pub fn set_green(&mut self, g: u8) { self.color[1] = g; }
+// #[allow(dead_code)] pub fn set_blue(&mut self, b: u8) { self.color[0] = b; }
+// #[allow(dead_code)] pub fn set_alpha(&mut self,a: u8) { self.color[3] = a; }

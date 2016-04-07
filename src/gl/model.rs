@@ -4,6 +4,7 @@ use std::io::prelude::*;
 use std::path::Path;
 use gl::geometry::*;
 use gl::tga_image::*;
+use gl::color::*;
 
 #[derive(Debug,Clone)]
 pub struct Model {
@@ -129,7 +130,7 @@ impl Model {
         ret
     }
     #[allow(dead_code)]
-    pub fn diffuse(&self, uv: Vec2i) -> TGAColor {
+    pub fn diffuse(&self, uv: Vec2i) -> Color {
         self.diffusemap_.get(uv.x, uv.y)
     }
     #[allow(dead_code)]
