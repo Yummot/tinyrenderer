@@ -22,8 +22,7 @@ fn main() {
                    else { panic!("Too many parameters input."); };
     
     let mut image = gl::TGAImage::with_info(width as isize, height as isize, tga_image::RGB);
-    let mut zbuffer = gl::TGAImage::with_info(width as isize, height as isize, tga_image::GRAYSCALE);
-    
+    let mut zbuffer = vec![0.0; (width * height) as usize];
     let mut CameraOne = Camera::new(255.0);
     CameraOne.set_light_dir(Vec3f::new(1,1,1));
     CameraOne.lookat(eye, center, up);
@@ -43,8 +42,6 @@ fn main() {
     
     image.flip_vertically().unwrap();
     image.write_tga_file("output.tga", tga_image::WRITE_RLE_FILE).unwrap();
-    zbuffer.flip_vertically().unwrap();
-    zbuffer.write_tga_file("zbuffer.tga", tga_image::WRITE_RLE_FILE).unwrap();
     
     println!("Finished");
 }

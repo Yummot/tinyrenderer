@@ -56,7 +56,7 @@ fn barycentric(A: Vec2f, B: Vec2f, C: Vec2f, P: Vec2f) -> Vec3f {
     return Vec3f::new(-1.0, 1.0, 1.0)    
 }
 
-pub fn triangle<S: Shader>(pts: &mut [Vec4f], shader: &S, image: &mut TGAImage, zbuffer: &mut TGAImage) {
+pub fn triangle<S: Shader>(pts: &mut [Vec4f], shader: &S, image: &mut TGAImage, zbuffer: &mut Vec<f32>) {
     let mut bboxmin = Vec2f::new(std::f32::MAX, std::f32::MAX);
     let mut bboxmax = Vec2f::new(std::f32::MIN, std::f32::MIN);
     
@@ -73,13 +73,13 @@ pub fn triangle<S: Shader>(pts: &mut [Vec4f], shader: &S, image: &mut TGAImage, 
             let c = barycentric((pts[0] / pts[0][3]).proj2(), (pts[1] / pts[1][3]).proj2(), (pts[2] / pts[2][3]).proj2(), Vec2f::new(x, y));
             let z = pts[0][2] * c.x + pts[1][2] * c.y + pts[2][2] * c.z;
             let w = pts[0][3] * c.x + pts[1][3] * c.y + pts[2][3] * c.z;
-            let frag_depth = 0.0.max(255.0.min(z / w + 0.5)) as i32;
-            if c.x < 0.0 || c.y < 0.0 || c.z < 0.0 || zbuffer.get(x, y)[0] as i32 > frag_depth { 
+            let frag_depth = 0.0.max(255.0.min(z / w + 0.5));
+            if c.x < 0.0 || c.y < 0.0 || c.z < 0.0 || zbuffer[(x + y * image.get_width()) as usize] > frag_depth as f32 { 
                 continue 
             }
             let discard = shader.fragment(c, &mut color);
             if !discard {
-                zbuffer.set(x, y, Color::grayscale(frag_depth as u8));
+                zbuffer[(x + y * image.get_width()) as usize] = frag_depth;
                 image.set(x, y, color);
             }
         } 
