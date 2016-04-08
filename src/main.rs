@@ -24,7 +24,7 @@ fn main() {
     let mut image = gl::TGAImage::with_info(width as isize, height as isize, tga_image::RGB);
     let mut zbuffer = gl::TGAImage::with_info(width as isize, height as isize, tga_image::GRAYSCALE);
     
-    let mut CameraOne = Camera::new();
+    let mut CameraOne = Camera::new(255.0);
     CameraOne.set_light_dir(Vec3f::new(1,1,1));
     CameraOne.lookat(eye, center, up);
     CameraOne.viewport(width / 8, height / 8, width * 3 / 4, height * 3 / 4);

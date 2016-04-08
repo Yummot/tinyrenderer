@@ -92,6 +92,7 @@ pub struct Camera {
     viewport: Mat4,
     projection: Mat4,
     pub light_dir: Vec3f,
+    depth: f32,
 }
 
 // pub static mut CameraOne: Camera = Camera {
@@ -104,12 +105,13 @@ pub struct Camera {
 
 impl Camera {
     #[allow(dead_code)]
-    pub fn new() -> Camera {
+    pub fn new(depth: f32) -> Camera {
         Camera {
             modelview: Mat4::zero(),
             viewport: Mat4::zero(),
             projection: Mat4::zero(),
             light_dir: Vec3f::zero(),
+            depth: depth,
         }    
     }
     pub fn set_light_dir(&mut self, light_dir: Vec3f) {
@@ -120,10 +122,10 @@ impl Camera {
         self.viewport = Mat4::identity();
         self.viewport[(0,3)] = x as f32 + w as f32 / 2.0;
         self.viewport[(1,3)] = y as f32 + h as f32 / 2.0;
-        self.viewport[(2,3)] = 255.0 / 2.0;
+        self.viewport[(2,3)] = self.depth / 2.0;
         self.viewport[(0,0)] = w as f32 / 2.0;
         self.viewport[(1,1)] = h as f32 / 2.0;
-        self.viewport[(2,2)] = 255.0 / 2.0;
+        self.viewport[(2,2)] = self.depth / 2.0;
     }
     #[allow(dead_code)]
     pub fn projection(&mut self, coeff: f32) {
