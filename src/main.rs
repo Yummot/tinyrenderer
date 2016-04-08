@@ -5,13 +5,12 @@ pub use gl::*;
 #[cfg(test)]
 mod tests;
 
-
 #[allow(non_snake_case)]
 fn main() {
     let width: i32= 800;
     let height: i32= 800;
     let args: Vec<String> = std::env::args().collect();
-    let eye = Vec3f::new(0,-1,3);
+    let eye = Vec3f::new(1,1,3);
     let center = Vec3f::new(0,0,0);
     let up = Vec3f::new(0,1,0);
     

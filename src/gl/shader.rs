@@ -24,10 +24,9 @@ impl GourauShader {
 
 impl Shader for GourauShader {
     fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model,iface: i32, nthvert: i32) -> Vec4f {
-        let mut gl_vertex = model.face_vert(iface, nthvert).embed(1.0);
-        gl_vertex = camera.viewport * camera.projection * camera.modelview * gl_vertex;
+        let gl_vertex = model.face_vert(iface, nthvert).embed(1.0);
         self.vary_intensity[nthvert as usize] = 0.0.max(model.face_normal(iface, nthvert) * camera.light_dir);
-        gl_vertex
+        camera.viewport * camera.projection * camera.modelview * gl_vertex
     }
     fn fragment(&self, bar: Vec3f, color: &mut Color) -> bool {
         let intensity = self.vary_intensity * bar;
