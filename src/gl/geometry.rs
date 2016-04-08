@@ -383,8 +383,16 @@ impl Vec3f {
 
 impl Vec4f {
     #[allow(dead_code)]
-    pub fn proj(&self) -> Vec3f {
+    pub fn proj3(&self) -> Vec3f {
         let mut ret = Vec3f::zero();
+        for i in 0..ret.len() {
+            ret[i] = self[i];
+        }
+        ret
+    }
+    #[allow(dead_code)]
+    pub fn proj2(&self) -> Vec2f {
+        let mut ret = Vec2f::zero();
         for i in 0..ret.len() {
             ret[i] = self[i];
         }

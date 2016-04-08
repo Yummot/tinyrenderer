@@ -11,7 +11,7 @@ fn main() {
     let width: i32= 800;
     let height: i32= 800;
     let args: Vec<String> = std::env::args().collect();
-    let eye = Vec3f::new(1,1,3);
+    let eye = Vec3f::new(0,-1,3);
     let center = Vec3f::new(0,0,0);
     let up = Vec3f::new(0,1,0);
     
@@ -35,7 +35,7 @@ fn main() {
     let mut shader = gl::GourauShader::new();
     
     for i in 0..model.nfaces() {
-        let mut screen_coords = [Vec3i::zero();3];
+        let mut screen_coords = [Vec4f::zero();3];
         for j in 0..3 {
             screen_coords[j] = shader.vertex(&CameraOne, &mut model, i as i32, j as i32); 
         }
