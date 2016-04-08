@@ -66,27 +66,23 @@ pub fn triangle<S: Shader>(pts: &mut [Vec4f], shader: &S, image: &mut TGAImage, 
         bboxmin[1] = bboxmin[1].min(pts[i][1] / pts[i][3]);
         bboxmax[1] = bboxmax[1].max(pts[i][1] / pts[i][3]);  
     }
-    let mut p = Vec2i::new(bboxmin.x, bboxmin.y);
+    
     let mut color = Color::new();
-    while p.x <= bboxmax.x as i32 {
-        p.y = bboxmin.y as i32;
-        while p.y <= bboxmax.y as i32 {
-            let c = barycentric((pts[0] / pts[0][3]).proj2(), (pts[1] / pts[0][3]).proj2(), (pts[2] / pts[0][3]).proj2(), p.cast::<f32>());
+    for x in (bboxmin.x as i32)..(bboxmax.x as i32 + 1) {
+        for y in (bboxmin.y as i32)..(bboxmax.y as i32 + 1) {
+            let c = barycentric((pts[0] / pts[0][3]).proj2(), (pts[1] / pts[1][3]).proj2(), (pts[2] / pts[2][3]).proj2(), Vec2f::new(x, y));
             let z = pts[0][2] * c.x + pts[1][2] * c.y + pts[2][2] * c.z;
             let w = pts[0][3] * c.x + pts[1][3] * c.y + pts[2][3] * c.z;
             let frag_depth = 0.0.max(255.0.min(z / w + 0.5)) as i32;
-            if c.x < 0.0 || c.y < 0.0 || c.z < 0.0 || zbuffer.get(p.x, p.y)[0] as i32 > frag_depth { 
-                p.y += 1;
+            if c.x < 0.0 || c.y < 0.0 || c.z < 0.0 || zbuffer.get(x, y)[0] as i32 > frag_depth { 
                 continue 
             }
             let discard = shader.fragment(c, &mut color);
             if !discard {
-                zbuffer.set(p.x, p.y, Color::grayscale(frag_depth as u8));
-                image.set(p.x, p.y, color);
+                zbuffer.set(x, y, Color::grayscale(frag_depth as u8));
+                image.set(x, y, color);
             }
-            p.y += 1;
-        }
-        p.x += 1;    
+        } 
     }
 }
 
