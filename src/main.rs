@@ -5,7 +5,6 @@ pub use gl::*;
 #[cfg(test)]
 mod tests;
 
-
 #[allow(non_snake_case)]
 fn main() {
     let width: i32= 800;
@@ -35,7 +34,7 @@ fn main() {
     let mut shader = gl::GourauShader::new();
     
     for i in 0..model.nfaces() {
-        let mut screen_coords = [Vec3i::zero();3];
+        let mut screen_coords = [Vec4f::zero();3];
         for j in 0..3 {
             screen_coords[j] = shader.vertex(&CameraOne, &mut model, i as i32, j as i32); 
         }

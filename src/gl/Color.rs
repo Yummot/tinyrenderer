@@ -25,8 +25,7 @@ impl ColorType {
     }
     pub fn nbytes(&self) -> usize {
         match *self {
-            ColorType::None => 0,
-            ColorType::GRAY(_) => 1, 
+            ColorType::GRAY(..) => 1, 
             ColorType::RGB(..) => 3,
             ColorType::RGBA(..) => 4,
             _ => 0,

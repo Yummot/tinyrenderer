@@ -130,20 +130,17 @@ impl Model {
         ret
     }
     #[allow(dead_code)]
-    pub fn diffuse(&self, uv: Vec2i) -> Color {
+    pub fn diffuse(&self, uvf: Vec2f) -> Color {
+        let uv = Vec2i::new(uvf[0] * self.diffusemap_.get_width() as f32, uvf[1] * self.diffusemap_.get_height() as f32);
         self.diffusemap_.get(uv.x, uv.y)
     }
     #[allow(dead_code)]
-    pub fn uv<M,N>(&self, iface: M, nvert: N) -> Vec2i
-        where M: Num + NumCast + Copy, N: Num + NumCast + Copy {
-        let idx = self.faces_[cast::<M,usize>(iface).unwrap()][cast::<N, usize>(nvert).unwrap()][1] as usize;
-        Vec2i::new(
-            self.uv_[idx].x * self.diffusemap_.get_width() as f32,
-            self.uv_[idx].y * self.diffusemap_.get_height() as f32
-            )
+    pub fn uv<M,N>(&self, iface: usize, nthvert: usize) -> Vec2f {
+        self.uv_[self.faces_[iface][nthvert][1] as usize]
     }
     #[allow(dead_code)]
-    pub fn normal(&self, uv: Vec2i) -> Vec3f {
+    pub fn normal(&self, uvf: Vec2f) -> Vec3f {
+        let uv = Vec2i::new(uvf[0] * self.normalmap_.get_width() as f32, uvf[1] * self.normalmap_.get_height() as f32);
         let color = self.normalmap_.get(uv[0], uv[1]);
         let mut res = Vec3f::zero();
         for i in 0..3 {
@@ -151,7 +148,8 @@ impl Model {
         }
         res
     }
-    pub fn specular(&self, uv: Vec2i) -> f32 {
+    pub fn specular(&self, uvf: Vec2f) -> f32 {
+        let uv = Vec2i::new(uvf[0] * self.specularmap_.get_width() as f32, uvf[1] * self.specularmap_.get_height() as f32);
         self.specularmap_.get(uv.x, uv.y)[0] as f32 / 1.0
     }
 

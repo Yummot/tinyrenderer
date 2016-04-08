@@ -1,7 +1,7 @@
 use gl::*;
 
 pub trait Shader {
-    fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model, iface: i32, nthvert: i32) -> Vec3i;
+    fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model, iface: i32, nthvert: i32) -> Vec4f;
     fn fragment(&self, bar: Vec3f, color: &mut Color) -> bool;
 }
 
@@ -23,13 +23,10 @@ impl GourauShader {
 }
 
 impl Shader for GourauShader {
-    fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model,iface: i32, nthvert: i32) -> Vec3i {
-        let mut gl_vertex = model.face_vert(iface, nthvert).embed(1.0);
-        gl_vertex = camera.viewport * camera.projection * camera.modelview * gl_vertex;
-        let cmp = model.face_normal(iface, nthvert) * camera.light_dir;
-        let clamp = clamp!(cmp, 0.0, 1.0);
-        self.vary_intensity[nthvert as usize] = clamp;
-        (gl_vertex / gl_vertex[3]).proj().cast::<i32>()
+    fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model,iface: i32, nthvert: i32) -> Vec4f {
+        let gl_vertex = model.face_vert(iface, nthvert).embed(1.0);
+        self.vary_intensity[nthvert as usize] = 0.0.max(model.face_normal(iface, nthvert) * camera.light_dir);
+        camera.viewport * camera.projection * camera.modelview * gl_vertex
     }
     fn fragment(&self, bar: Vec3f, color: &mut Color) -> bool {
         let intensity = self.vary_intensity * bar;
@@ -49,16 +46,16 @@ impl ToonShader {
 }
 
 impl Shader for ToonShader {
-    fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model, iface: i32, nthvert: i32) -> Vec3i {
+    fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model, iface: i32, nthvert: i32) -> Vec4f {
         let mut gl_vertex = model.face_vert(iface, nthvert).embed(1.0);
         gl_vertex = camera.projection * camera.modelview * gl_vertex;
-        let proj = (gl_vertex / gl_vertex[3]).proj();
+        let proj = (gl_vertex / gl_vertex[3]).proj3();
         for i in 0..self.vary_mat3.ncols() as usize {
             self.vary_mat3[nthvert as usize][i] = proj[i];
         } 
         self.vary_intensity[nthvert as usize] = clamp!(model.face_normal(iface, nthvert) * camera.light_dir, 0.0, 1.0);
         gl_vertex = camera.viewport * gl_vertex;
-        (gl_vertex / gl_vertex[3]).proj().cast::<i32>()
+        gl_vertex
     }
     fn fragment(&self, bar: Vec3f, color: &mut Color) -> bool {
         let mut intensity = self.vary_intensity * bar;
@@ -83,16 +80,16 @@ impl FlatShader {
 }
 
 impl Shader for FlatShader {
-    fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model, iface: i32, nthvert: i32) -> Vec3i {
+    fn vertex(&mut self, camera: &super::Camera, model: &mut super::Model, iface: i32, nthvert: i32) -> Vec4f {
         self.light_dir = camera.light_dir;
         let mut gl_vertex = model.face_vert(iface, nthvert).embed(1.0);
         gl_vertex = camera.projection * camera.modelview * gl_vertex;
-        let proj = (gl_vertex / gl_vertex[3]).proj();
+        let proj = (gl_vertex / gl_vertex[3]).proj3();
         for i in 0..self.vary_mat3.ncols() as usize {
             self.vary_mat3[nthvert as usize][i] = proj[i];
         } 
         gl_vertex = camera.viewport * gl_vertex;
-        (gl_vertex / gl_vertex[3]).proj().cast::<i32>()
+        gl_vertex
     }
     #[allow(unused_variables)]
     fn fragment(&self, bar: Vec3f, color: &mut Color) -> bool {
