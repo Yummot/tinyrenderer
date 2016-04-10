@@ -237,6 +237,8 @@ impl<'a> Shader for IShader<'a> {
         for i in 0..3 {
             color[i] = 255.0f32.min(20.0 + c[i] as f32 * shadow * (1.2 * diff + 0.6 * spec)) as u8;
         }
+        let wc = *color;
+        let st = true;
         false
     }
 }

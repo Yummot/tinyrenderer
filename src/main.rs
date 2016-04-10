@@ -15,6 +15,7 @@ fn main() {
     let center = Vec3f::new(0,0,0);
     let up = Vec3f::new(0,1,0);
     let light_dir = Vec3f::new(1,1,0).normalize();
+    
     let mut model = if args.len() == 1 { model::Model::open_with_texture("obj/african_head.obj") }
                    else if args.len() == 2 { 
                        if args[1].find(".obj") != None { model::Model::open_with_texture(&args[1]) } 

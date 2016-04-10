@@ -69,7 +69,7 @@ pub fn triangle<S: Shader>(pts: &mut [Vec4f], shader: &S, image: &mut TGAImage, 
     let mut color = Color::new();
     for x in (bboxmin.x as i32)..(bboxmax.x as i32 + 1) {
         for y in (bboxmin.y as i32)..(bboxmax.y as i32 + 1) {
-            let c = barycentric((pts[0] / pts[0][3]).proj2(), (pts[1] / pts[1][3]).proj2(), (pts[2] / pts[2][3]).proj2(), Vec2i::new(x, y).cast::<f32>());
+            let c = barycentric((pts[0] / pts[0][3]).proj2(), (pts[1] / pts[1][3]).proj2(), (pts[2] / pts[2][3]).proj2(), Vec2f::new(x, y));
             let z = pts[0][2] * c.x + pts[1][2] * c.y + pts[2][2] * c.z;
             let w = pts[0][3] * c.x + pts[1][3] * c.y + pts[2][3] * c.z;
             let frag_depth = z / w;
