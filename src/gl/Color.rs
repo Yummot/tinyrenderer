@@ -13,14 +13,14 @@ pub use self::ColorType::RGB as RGBColor;
 pub use self::ColorType::RGBA as RGBAColor; 
 
 impl ColorType {
-    pub fn get_bgra_value(&self) -> u32 {
+    pub fn raw(&self) -> [u8;4] {
         use color::ColorType::*;
         match self {
-            &GRAY(gray) => gray as u32,
-            &RGB(r, g, b) => (b as u32) << 24 | (g as u32) << 16 | (r as u32) << 8,  
-            &RGBA(r, g, b, a) => (b as u32) << 24 | (g as u32) << 16 | (r as u32) << 8 | (a as u32),
-            &None => 0,
-            &VALUE(v) => v,  
+            &GRAY(gray) => [gray,0,0,0],
+            &RGB(r, g, b) => [b,g,r,0],  
+            &RGBA(r, g, b, a) => [b,g,r,a],
+            &None => [0,0,0,0],
+            &VALUE(v) => unsafe { transmute::<u32,[u8;4]>(v) },  
         }    
     }
     pub fn nbytes(&self) -> usize {
@@ -99,8 +99,8 @@ impl Color {
     #[allow(dead_code)] pub fn new() -> Color { Color { color: ColorType::None } }
     #[allow(dead_code)] pub fn with_color(color: ColorType) -> Color { Color { color: color } }
     #[allow(dead_code)] pub fn grayscale(gray: u8) -> Color { Color { color: ColorType::GRAY(gray) } }
-    #[allow(dead_code)] pub fn val(&self) -> u32 { self.color.get_bgra_value() }
-    #[allow(dead_code)] pub fn raw(&self) -> [u8;4] { unsafe { transmute::<u32,[u8;4]>(self.color.get_bgra_value()) } } 
+    // #[allow(dead_code)] pub fn val(&self) -> u32 { self.color.get_bgra_value() }
+    #[allow(dead_code)] pub fn raw(&self) -> [u8;4] { self.color.raw() } 
     #[allow(dead_code)] pub fn nbytes(&self) -> usize { self.color.nbytes() }
     #[allow(dead_code)]
     pub fn set_val(&mut self, val: u32, bytespp: i32) {

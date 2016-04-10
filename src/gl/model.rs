@@ -104,8 +104,14 @@ impl Model {
         let prefix = filename.split('.').next().unwrap();
         let texname = prefix.to_string() + suffix;
         println!("{}", texname);
-        self.diffusemap_.read_tga_file(&texname);
-        self.diffusemap_.flip_vertically().unwrap();
+        let mut tmp = match suffix {
+            "_diffuse.tga" => &mut self.diffusemap_,
+            "_nm.tga" => &mut self.normalmap_,
+            "_spec.tga" => &mut self.specularmap_,
+            _ => return,   
+        };
+        tmp.read_tga_file(&texname);
+        tmp.flip_vertically().unwrap();
     }
     #[allow(dead_code)]
     pub fn nverts(&self) -> usize {
@@ -135,7 +141,7 @@ impl Model {
         self.diffusemap_.get(uv.x, uv.y)
     }
     #[allow(dead_code)]
-    pub fn uv<M,N>(&self, iface: usize, nthvert: usize) -> Vec2f {
+    pub fn uv(&self, iface: usize, nthvert: usize) -> Vec2f {
         self.uv_[self.faces_[iface][nthvert][1] as usize]
     }
     #[allow(dead_code)]

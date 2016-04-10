@@ -59,7 +59,6 @@ fn barycentric(A: Vec2f, B: Vec2f, C: Vec2f, P: Vec2f) -> Vec3f {
 pub fn triangle<S: Shader>(pts: &mut [Vec4f], shader: &S, image: &mut TGAImage, zbuffer: &mut Vec<f32>) {
     let mut bboxmin = Vec2f::new(std::f32::MAX, std::f32::MAX);
     let mut bboxmax = Vec2f::new(std::f32::MIN, std::f32::MIN);
-    
     for i in 0..3 {
         bboxmin[0] = bboxmin[0].min(pts[i][0] / pts[i][3]);
         bboxmax[0] = bboxmax[0].max(pts[i][0] / pts[i][3]);    
@@ -70,11 +69,11 @@ pub fn triangle<S: Shader>(pts: &mut [Vec4f], shader: &S, image: &mut TGAImage, 
     let mut color = Color::new();
     for x in (bboxmin.x as i32)..(bboxmax.x as i32 + 1) {
         for y in (bboxmin.y as i32)..(bboxmax.y as i32 + 1) {
-            let c = barycentric((pts[0] / pts[0][3]).proj2(), (pts[1] / pts[1][3]).proj2(), (pts[2] / pts[2][3]).proj2(), Vec2f::new(x, y));
+            let c = barycentric((pts[0] / pts[0][3]).proj2(), (pts[1] / pts[1][3]).proj2(), (pts[2] / pts[2][3]).proj2(), Vec2i::new(x, y).cast::<f32>());
             let z = pts[0][2] * c.x + pts[1][2] * c.y + pts[2][2] * c.z;
             let w = pts[0][3] * c.x + pts[1][3] * c.y + pts[2][3] * c.z;
-            let frag_depth = 0.0.max(255.0.min(z / w + 0.5));
-            if c.x < 0.0 || c.y < 0.0 || c.z < 0.0 || zbuffer[(x + y * image.get_width()) as usize] > frag_depth as f32 { 
+            let frag_depth = z / w;
+            if c.x < 0.0 || c.y < 0.0 || c.z < 0.0 || zbuffer[(x + y * image.get_width()) as usize] > frag_depth { 
                 continue 
             }
             let discard = shader.fragment(c, &mut color);
@@ -88,11 +87,11 @@ pub fn triangle<S: Shader>(pts: &mut [Vec4f], shader: &S, image: &mut TGAImage, 
 
 #[allow(dead_code)]
 pub struct Camera {
-    modelview: Mat4,
-    viewport: Mat4,
-    projection: Mat4,
+    pub modelview: Mat4,
+    pub viewport: Mat4,
+    pub projection: Mat4,
     pub light_dir: Vec3f,
-    depth: f32,
+    pub depth: f32,
 }
 
 // pub static mut CameraOne: Camera = Camera {
