@@ -32,9 +32,9 @@ pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: Color) {
          let t = (x as f32 - p0.x as f32) / (p1.x as f32 - p0.x as f32);
          let y = p0.y as f32 * (1.0 - t) + p1.y as f32 * t + 0.5;
          if steep {
-             image.set(y, x, color);
+             image.set(y as i32, x as i32, color);
          } else {
-             image.set(x, y, color);
+             image.set(x as i32, y as i32, color);
          }
      }
 }
@@ -69,7 +69,7 @@ pub fn triangle<S: Shader>(pts: &mut [Vec4f], shader: &S, image: &mut TGAImage, 
     let mut color = Color::new();
     for x in (bboxmin.x as i32)..(bboxmax.x as i32 + 1) {
         for y in (bboxmin.y as i32)..(bboxmax.y as i32 + 1) {
-            let c = barycentric((pts[0] / pts[0][3]).proj2(), (pts[1] / pts[1][3]).proj2(), (pts[2] / pts[2][3]).proj2(), Vec2f::new(x, y));
+            let c = barycentric((pts[0] / pts[0][3]).proj2(), (pts[1] / pts[1][3]).proj2(), (pts[2] / pts[2][3]).proj2(), Vec2i::new(x, y).cast::<f32>());
             let z = pts[0][2] * c.x + pts[1][2] * c.y + pts[2][2] * c.z;
             let w = pts[0][3] * c.x + pts[1][3] * c.y + pts[2][3] * c.z;
             let frag_depth = z / w;

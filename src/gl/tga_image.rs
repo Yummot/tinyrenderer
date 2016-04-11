@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::fs::File;
 use std::ptr::copy as memmove;
 use std::ptr::copy_nonoverlapping as memcpy;
-use gl::num::{Num, NumCast, cast};
+// use gl::num::{Num, NumCast, cast};
 use gl::color::*;
 
 // pub trait Image {}
@@ -357,10 +357,10 @@ impl TGAImage {
 
         for i in 0..half as usize {
             for j in 0..self.height as usize {
-                let color_1 = self.get(i, j);
-                let color_2 = self.get(width - 1 - i, j);
-                self.set(i, j, color_2);
-                self.set(width - 1 - i, j, color_1);
+                let color_1 = self.get(i as i32, j as i32);
+                let color_2 = self.get((width - 1 - i) as i32, j as i32);
+                self.set(i as i32, j as i32, color_2);
+                self.set((width - 1 - i) as i32, j as i32, color_1);
             }
         }
 
@@ -420,11 +420,9 @@ impl TGAImage {
     }
 
     #[allow(dead_code)]
-    pub fn get<X, Y>(&self, x: X, y: Y) -> Color
-        where X: Num + Copy + NumCast, Y: Num + Copy + NumCast
-    {
-        let x = cast::<X, usize>(x).unwrap();
-        let y = cast::<Y, usize>(y).unwrap();
+    pub fn get(&self, x: i32, y: i32) -> Color {
+        let x = x as usize;
+        let y = y as usize;
         if self.data.is_empty() || x >= self.width as usize || y >= self.height as usize {
             // return Err("Warning: x (y, x > width, y > height, or no data to get TGAColor.");
             return Color::with_color(ColorType::RGBA(0,0,0,0));
@@ -438,11 +436,9 @@ impl TGAImage {
     }
 
     #[allow(dead_code)]
-    pub fn set<X, Y>(&mut self, x: X, y: Y, color: Color) -> bool
-        where X: Num + Copy + NumCast, Y: Num + Copy + NumCast
-    {
-        let x = cast::<X, usize>(x).unwrap();
-        let y = cast::<Y, usize>(y).unwrap();
+    pub fn set(&mut self, x: i32, y: i32, color: Color) -> bool {
+        let x = x as usize;
+        let y = y as usize;
         if self.data.is_empty() || x >= self.width as usize || y >= self.height as usize {
             return false;
         }
