@@ -7,9 +7,9 @@
 *.cc
 /.vscode/*
 *.txt
-origin.cpp
 
 # Executables
 *.exe
 output.tga
 zbuffer.tga
+depth.tga
