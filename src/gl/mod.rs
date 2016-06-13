@@ -32,9 +32,9 @@ pub fn line(mut p0: Vec3i, mut p1: Vec3i, image: &mut TGAImage, color: Color) {
          let t = (x as f32 - p0.x as f32) / (p1.x as f32 - p0.x as f32);
          let y = p0.y as f32 * (1.0 - t) + p1.y as f32 * t + 0.5;
          if steep {
-             image.set(y as i32, x as i32, color);
+             image.set(y, x, color);
          } else {
-             image.set(x as i32, y as i32, color);
+             image.set(x, y, color);
          }
      }
 }

@@ -1,3 +1,4 @@
+#![feature(plugin)]
 #[macro_use]
 mod gl;
 pub use gl::*;
@@ -70,6 +71,7 @@ fn main() {
         image.flip_vertically().unwrap();
         image.write_tga_file("output.tga", gl::WRITE_RLE_FILE).unwrap();
     }
+    
     
     println!("Finished");
 }
