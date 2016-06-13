@@ -1,4 +1,3 @@
-#![feature(plugin)]
 #[macro_use]
 mod gl;
 pub use gl::*;
