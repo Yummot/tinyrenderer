@@ -5,7 +5,7 @@
 *.rlib
 *.dll
 *.cc
-/.vscode
+/.vscode/*
 *.txt
 origin.cpp
 
